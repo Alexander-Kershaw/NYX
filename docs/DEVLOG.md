@@ -64,3 +64,22 @@ The next step is to define the anomaly catalogue in some more detail, including 
 
 ---
 
+## Entry 004 - Anomaly Catalogue Design (Sunday 5th April 2026)
+
+### What I did
+- Defined the first simple anomaly catalogue for NYX
+- Grouped anomalies into operational, navigation, communications, and security related categories
+- Chose an initial anomaly set covering battery, thermal, signal, latency, packet integrity, position consistency, source trust, and replay  behaviour
+- Assigned some initial severity levels to each anomaly
+- Defined a hybrid detection philosophy combining deterministic rule based logic for abvious anomalies and future ML-based scoring for more subtle deviations and drift from the normal telemetry baseline
+
+### Why I did it
+The anomaly catalogue gives the project a realistic operational and security direction. It ensures that telemetry simulation is not random and that future validation, rules, and analytics are grounded in specific injected scenarios the platform is expected to detect.
+
+### What I learned
+Anomaly design is not just about inventing malformed or malicious data. It is about defining meaningful system failure and threat scenarios that affect specific telemetry fields in plausible ways that are mission sensitive for the context of a satellite constellation system. This makes the simulator, the detection layer, and the eventual dashboards far more coherent than they otherwise would be if it possessed more arbirary failure modes.
+
+### Notes
+The next step is to translate the schema design into a concrete structured contract, probably as a JSON Schema or a python schema validation model, so that the simulator and ingestion pipeline can enforce it consistently.
+
+---

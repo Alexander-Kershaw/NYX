@@ -262,3 +262,160 @@ A unified flat schema is preferred for the first version of NYX because it simpl
 
 ---
 
+## Anomaly Catalogue
+
+Since I intend that NYX will simulate and detect a focused set of anomaly scenarios representing operational faults, navigation inconsistencies, communications degradation, and security suspicious behaviour, an anomaly catalogue is necessary.
+
+The purpose of the anomaly catalogue is to:
+- guide the telemetry simulation
+- define some realistic failure, faults, and threat scenarios
+- support rule based anomaly detection detection
+- support future machine learning based anomaly scoring (hybrid with rule based as a complete detection system)
+- improve the realism and explainability of the platform
+
+The anomaly catalogue is essentially a structured list of information that characterises a threat such as: the name of the anomaly, what the anomaly means, what fields (satellite operational subsystems / security) the impact, whether they are operational or security related threats or failures, how sever they are in thier impact, how detectable they should be.
+
+---
+
+## Anomaly Families
+
+I considered 4 distict families of anomalies.
+
+I decided on this structure since it could map to simulator anomaly injections, validation rules, ML features, and dashboard categories quite naturally.
+
+### Operational anomalies
+Internal health or subsystem issues such as abnormal battery or thermal behaviour.
+
+### Navigation anomalies
+Movement or positional patterns that are implausible or inconsistent with expected orbital trajectory and continuity.
+
+### Communications anomalies
+Degraded telecommunications quality, latency problems, or transmission integrity issues.
+
+### Security anomalies
+Suspicious origin, identity, replay, or trust-related telemetry patterns. These are events that suggest spoofing and tampering.
+
+---
+
+## Initial Anomaly Set
+
+I am initially starting with a set of 8 anomalies that represent some potential injections in the telemetry simulator. I defined that event family that the anomaly is associated with, the meaning for intuition, the fields likely to be impacted by the injection event, and a severity category.
+
+For example a battery level could fall from 78% to 51% in an implausibly short interval, impacting the operational integrity family of telemetry events, impacting some relevant fields within that family (such as battery_pct, payload_status, etc...), yielding a severity (low, medium, high).
+
+### battery_drain_spike
+- Family: operational
+- Meaning: battery level drops faster than expected over a short interval
+- Likely affected fields: battery_pct, payload_status, status_code
+- Initial severity: medium
+
+This could indicate a power subsystem fault, power leakage, unexpected stress (potentially attack induced), to be detected with a set of rules first, then later ML can learn patterns for this sort of anomaly.
+
+### thermal_runaway
+- Family: operational
+- Meaning: temperature rises above expected safe operating conditions
+- Likely affected fields: temperature_c, payload_status, status_code
+- Initial severity: high
+
+Incidates potential hardware faults, cooling failures, hostile conditions, excessive activity, and may be detected with a temperature threhsold rule, a trend-based rule, and ML later.
+
+### signal_degradation
+- Family: communications
+- Meaning: signal strength falls below expected operational quality
+- Likely affected fields: signal_strength_db, uplink_latency_ms, downlink_latency_ms, payload_status
+- Initial severity: medium
+
+Could represent environmental interference such as attenuation or obstruction, antenna mechanical or technical failure, hostile jamming, and could be detected using a threshold rule or a repetition event rule.
+
+### latency_spike
+- Family: communications
+- Meaning: uplink or downlink latency rises well above nominal levels
+- Likely affected fields: uplink_latency_ms, downlink_latency_ms, packet_integrity_score
+- Initial severity: medium
+
+This may be indicative of telecommunication congestion, a routing issue, link degradation, malicious interference, could be detected using a threshold rule, and potentially a rolling baseline ML model later.
+
+### packet_corruption
+- Family: communications
+- Meaning: packet integrity score falls below trusted levels
+- Likely affected fields: packet_integrity_score, payload_status, status_code
+- Initial severity: medium
+
+Could represent a noisy link, corruption in transit, malformed transmission, security risk such as tampering, detected using a rule based definition.
+
+### impossible_position_jump
+- Family: navigation
+- Meaning: the reported movement between events is implausible for the satellite
+- Likely affected fields: latitude, longitude, altitude_km, velocity_kms
+- Initial severity: high
+
+May indicate navigational faults, corruptions in telemetry, telemetry instrumentation failure / miscalibration, data spoofing, replay mismatching, detected using a stateful rule and / or a temporal consistency check.
+
+Note this means that multiple telemetry events are considered not just anomalies within the same row to check the temporal consistency of telemetry.
+
+### spoofed_source
+- Family: security
+- Meaning: telemetry appears to come from an untrusted or unexpected source
+- Likely affected fields: source_ip, auth_status, ground_station_id, status_code
+- Initial severity: high
+
+Indication of identity forgery, malicious injection attack, or a compromised communications pathway. This may be detected using a strict allowlist rule and / or a failed identify authentication rule.
+
+### replay_pattern
+- Family: security
+- Meaning: events or event sequences appear duplicated or reused in a suspicious way
+- Likely affected fields: event_timestamp, event_id, satellite_id, repeated telemetry values
+- Initial severity: high
+
+Represents a replay attack, faults in the telemetry simulation, or an upstream duplication bug, this could be addressed with a duplicate pattern rule and temporal sequence analysis.
+
+---
+
+## Severity Model
+
+So far I have decided on the following initial severity list:
+
+| Anomaly                  | Severity |
+| ------------------------ | -------- |
+| battery_drain_spike      | medium   |
+| thermal_runaway          | high     |
+| signal_degradation       | medium   |
+| latency_spike            | medium   |
+| packet_corruption        | medium   |
+| impossible_position_jump | high     |
+| spoofed_source           | high     |
+| replay_pattern           | high     |
+
+A `critial` field could also be implemented with compounding issues such as: spoofed source, in conjunction with failed authentication and a corrputed packet is a **critial** severity.
+
+This layered compounding severity logic could be added later.
+
+---
+
+## Detection Philosophy
+
+NYX will use a hybrid detection approach using a mix of deterministic rules and ML detections.
+
+### Rules-based detection
+Used for clearly defined conditions such as:
+- impossible values
+- threshold breaches
+- failed authentication
+- untrusted source identities
+- repeated or duplicated patterns
+
+### ML-based anomaly detection
+Planned for future phases to help identify:
+- more subtle deviations from the norm
+- combinations of weak signals
+- behaviour that is unusual relative to recent baseline patterns
+
+## Simulation Philosophy
+
+The simulator should eventually generate both:
+- Conspicuous anomalies that are easy to detect and classify
+- subtle anomalies that are closer to realistic operational drift or suspicious weak signals
+
+This helps make the platform more realistic and gives the later detection layer a stronger purpose.
+
+---
