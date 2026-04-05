@@ -23,3 +23,22 @@ The next step is to define the satellite telemetry event design, including what 
 
 ---
 
+## Entry 002 - Telemetry Entities and Event Semantics (Sunday 5th April 2026)
+
+### What I did
+- Defined the core monitored telemetry entities in the satellite constellation system
+- Decided that telemetry events should represent single timestamped observations (keeping things more simple)
+- Decided on an initial set of event types: heartbeat, navigation, power, thermal, and comms
+- Defined a small initial simulated satellite fleet and ground station set
+- Identified the first broad anomaly categories the platform should eventually detect
+
+### Why I did it
+This establishes the conceptual model of the platform before writing any simulator code or cloud infrastructure. It ensures that telemetry generation, validation, detection, and analytics all in alignment and are semantically consistent.
+
+### What I learned
+A telemetry platform depends on consistent event semantics. If an event does not have a clear meaning, the downstream pipeline, rules, and analytics may become corrputed. Defining event intent early is the initial agreement on meaning and structure.
+
+### Notes
+The next step is to define the schema and the field level more precisely, including which fields belong to which event types and which fields should be mandatory or optional.
+
+---
