@@ -119,3 +119,146 @@ Another set of generic ground stations completing the communication link from gr
 
 ---
 
+## Field-Level Schema Design
+
+I decided that NYX will use a unified telemetry event schema.
+
+This means every telemetry record will share a common consistent event structure, while some fields will only be populated for relevant event types (so some fields may be null depending on the type of event). This approach simplifies ingestion, validation, storage, and analytics while still allowing event specific meaning.
+
+A single telemetry schema allows for a single ingestion path, singular validation contract, one bronze format, one silver transformation model, and a single table shape that I could SQL query with Athena donwstream.
+
+The schema structure can be divided into four subgroups:
+
+- Event identity and metadata (the who, what, when, etc....)
+- Context Fields (Where the event originates from and what satallite operational subsystem is refers to)
+- Telemetry measurement fields (Actual measurements such as communications signal, temperature, etc...)
+- Security and trust fields (Is the actual information trustworthy or compromised)
+
+## Required Common Fields
+
+These fields exist for every telemetry event as default
+
+| Field               | Type              | Why it exists                                    |
+| ------------------- | ----------------- | ------------------------------------------------ |
+| `event_id`          | string            | unique identifier for traceability               |
+| `event_timestamp`   | string (ISO 8601) | when the event occurred                          |
+| `satellite_id`      | string            | which satellite emitted the event                |
+| `ground_station_id` | string            | receiving or relaying station                    |
+| `event_type`        | string            | heartbeat / navigation / power / thermal / comms |
+| `schema_version`    | string            | future-proofing the contract                     |
+| `source_ip`         | string            | source identity context                          |
+| `ingest_source`     | string            | simulator, replay, test harness, etc.            |
+
+
+## Optional Measurement Fields
+
+The optional fields are relevent depending on the event type
+
+| Field                    | Type   | Used by                             |
+| ------------------------ | ------ | ----------------------------------- |
+| `latitude`               | float  | navigation                          |
+| `longitude`              | float  | navigation                          |
+| `altitude_km`            | float  | navigation                          |
+| `velocity_kms`           | float  | navigation                          |
+| `battery_pct`            | float  | power                               |
+| `temperature_c`          | float  | thermal                             |
+| `signal_strength_db`     | float  | comms                               |
+| `uplink_latency_ms`      | float  | comms                               |
+| `downlink_latency_ms`    | float  | comms                               |
+| `packet_integrity_score` | float  | comms                               |
+| `auth_status`            | string | comms / security                    |
+| `payload_status`         | string | heartbeat / power / thermal / comms |
+| `status_code`            | string | generic subsystem status            |
+
+
+## Optional Context Fields
+
+These context fields exist as additional add ons that improve realism for satellite operations and also is for future anamolous event injection later in the project.
+
+| Field          | Type    | Why                                              |
+| -------------- | ------- | ------------------------------------------------ |
+| `orbit_class`  | string  | LEO/MEO/GEO style context                        |
+| `mission_mode` | string  | nominal, standby, safe, emergency                |
+| `is_anomalous` | boolean | useful in simulator labelled training/evaluation |
+| `anomaly_type` | string  | what anomaly was injected, if any                |
+
+## Conditional Requirements by Event Type
+
+### heartbeat
+Typically lightweight. May include payload_status and status_code.
+
+### navigation
+Should include:
+- latitude
+- longitude
+- altitude_km
+- velocity_kms
+
+### power
+Should include:
+- battery_pct
+
+### thermal
+Should include:
+- temperature_c
+
+### comms
+Should include:
+- signal_strength_db
+- uplink_latency_ms
+- downlink_latency_ms
+- packet_integrity_score
+- auth_status
+
+## Allowed Values
+
+### event_type
+- heartbeat
+- navigation
+- power
+- thermal
+- comms
+
+### auth_status
+- authenticated
+- failed
+- unknown
+
+### payload_status
+- nominal
+- degraded
+- offline
+- safe_mode
+
+### mission_mode
+- nominal
+- standby
+- safe
+- emergency
+
+### orbit_class
+- LEO
+- MEO
+- GEO
+
+## Validation Philosophy
+
+The schema should validate:
+- required field presence
+- allowed values for categorical fields
+- numeric range sanity
+- conditional field requirements based on event_type
+
+Optional fields may be null when they are not relevant to the event type, but should not contain invalid values when populated.
+
+## Design Rationale
+
+A unified flat schema is preferred for the first version of NYX because it simplifies:
+- simulator implementation
+- validation logic
+- bronze and silver storage design
+- Athena SQL querying
+- downstream anomaly detection and analytics
+
+---
+

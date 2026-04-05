@@ -42,3 +42,25 @@ A telemetry platform depends on consistent event semantics. If an event does not
 The next step is to define the schema and the field level more precisely, including which fields belong to which event types and which fields should be mandatory or optional.
 
 ---
+
+## Entry 003 - Telemetry Schema Design at The Field Level (Sunday 5th April 2026)
+
+### What I did
+- Elected to use a unified telemetry schema rather than separate schemas per event type
+- Defined the common required metadata fields shared by all telemetry events
+- Defined optional measurement fields that apply only to relevant event types
+- Added conditional requirements for navigation, power, thermal, and comms events
+- Defined initial allowed values for key categorical fields
+- Established a validation philosophy covering presence, allowed values, numeric sanity, and rules that are aware of the event type
+
+### Why I did it
+This design gives the project a solid practical contract that is operationally realistic enough for a telemetry platform while still being simple enough to implement cleanly. It keeps ingestion and querying manageable without losing the event specific meaning.
+
+### What I learned
+A good telemetry schema balances semantic clarity with implementation practicality. Separate schemas may be more elegant as it means there would not be an abundance of nulls in event specific records, but a unified schema may often the better engineering choice when the goal is building a stable platform with simpler validation and analytics.
+
+### Notes
+The next step is to define the anomaly catalogue in some more detail, including what types of suspicious or faulty behaviour will be simulated and injected, and which fields each anomaly is expected to affect.
+
+---
+
