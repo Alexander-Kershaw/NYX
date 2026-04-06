@@ -141,3 +141,23 @@ Removed `use_enum_values=True` from the model configuration and used `model_dump
 It is better to keep enums as typed values inside the model for internal validation and logic, then convert them to JSON only when exporting or printing data to avoid encountering this issue again.
 
 ---
+
+## Entry 007 - Automated Contract Tests with Pytest (Monday 6th April 2026)
+
+### What I did
+- Added pytest automated tests for the telemetry contract
+- Wrote passing tests for valid navigation and communications events
+- Wrote failing tests for missing required navigation fields and invalid numeric ranges
+
+### Why I did it
+Manual checks are useful early on, but automated tests are necessary to keep the contract trustworthy as the project evolves over time. These tests provide a repeatable way to confirm that valid telemetry is accepted and invalid telemetry is rejected in a consistent manner.
+
+### What I learned
+A validation contract becomes significantly more valuable once it is backed by automated tests. Tests serve as regression tripwires, warning me when later changes break assumptions that were previously held which could indicate some broken logic or malformation in the schema contract.
+
+### Notes
+The next step is to clean up the package structure slightly and begin building the telemetry simulator itself, using the contract to generate valid mission-style events.
+
+---
+
+
