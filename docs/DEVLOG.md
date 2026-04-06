@@ -160,4 +160,23 @@ The next step is to clean up the package structure slightly and begin building t
 
 ---
 
+## Entry 009 - Multiple Type Telemetry Event Factories (Monday 6th April 2026)
+
+### What I did
+- Extended the simulator factory layer to generate the other event types: heartbeat, power, thermal, and comms events in addition to navigation
+- Added a small internal helper to standardize how identifiers are selected to avoid repeating logic for each of the event type builder functions
+- Updated the event generation script to emit a mixed set of telemetry events covering all the event types
+- Expanded pytest coverage to validate that each event factory telemetry builder function returns the correct event type and required fields
+
+### Why I did it
+A realistic telemetry platform would need more than one kind of event so it is faithful to the complexities and multfactoral nature of space instrumentation operations. Adding multiple event factories makes the eventual simulator capable of producing a richer and more believable operational stream while still staying aligned with the contract as it is built from the contract.
+
+### What I learned
+Separating event generation by telemetry type keeps the code more readable and easier to extend in future if I wish to do so. It also reflects a foundational engineering pattern, shared scaffolding with specialised builders for different output shapes, allowing for an extendable and intuative telemetry generation architecture.
+
+### Notes
+The next step is to build a simple simulator loop that emits a sequence of mixed telemetry events over time rather than just singular samples to emulate a satellite telemetry stream encompassing an array of operational subsystems.
+
+---
+
 
