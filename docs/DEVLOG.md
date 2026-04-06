@@ -83,3 +83,24 @@ Anomaly design is not just about inventing malformed or malicious data. It is ab
 The next step is to translate the schema design into a concrete structured contract, probably as a JSON Schema or a python schema validation model, so that the simulator and ingestion pipeline can enforce it consistently.
 
 ---
+
+## Entry 005 - Initial Pydantic Telemetry Contract (Monday 6th April 2026)
+
+### What I did
+- Set up the initial Python contract for telemetry events using Pydantic
+- Defined enums for controlled categorical fields such as event type, authentication status, payload status, mission mode, and orbit class, meaning they stay consistent and support data integrity
+- Created the first TelemetryEvent model with required metadata fields and the optional measurement/context fields
+- Added some initial validation rules for battery percentage, packet integrity, latitude, and longitude
+- Created a small sample script to instantiate and print a valid telemetry event
+
+### Why I did it
+This step turns the earlier schema design into actual executable validation logic. It creates a concrete data contract that can be reused by the simulator, tests, and the later ingestion components.
+
+### What I learned
+A schema design becomes much more useful when it is encoded as a programmatic contract. Pydantic acts as a gatekeeper by enforcing allowed structures and values before bad data can spread into the rest of the system.
+
+### Notes
+The next step is to improve the contract by adding event type awareness to the validation logic, so that fields like latitude and velocity are required for navigation events, while communications events require fields like latency and packet integrity.
+
+---
+

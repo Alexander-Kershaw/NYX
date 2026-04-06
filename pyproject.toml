@@ -1,0 +1,11 @@
+[project]
+name = "NYX"
+version = "0.1.0"
+description = "NYX - AWS-native secure satellite consellation telemetry intelligence platform"
+requires-python = ">3.11"
+dependencies = [
+    "pydantic>=2.0,<3.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
