@@ -104,3 +104,40 @@ The next step is to improve the contract by adding event type awareness to the v
 
 ---
 
+## Entry 006 - Event Type Aware Validation (Monday 6th April 2026)
+
+### What I did
+- Added a model validation to the TelemetryEvent contract
+- Enforced conditional required fields based on specific event types
+- Required navigation events to include position and velocity fields
+- Required power, thermal, and comms events to include the relevant subsystem fields
+- Added a valid and invalid sample telemetry example to confirm the validation behaviour is working as intended
+
+### Why I did it
+A telemetry contract should not only validate individual field ranges, but should also enforce that the event makes contextual sense as a whole. Event type aware validation makes the schema significantly stronger by checking that each distinct kind of event includes the fields it logically requires.
+
+### What I learned
+There is a key difference between field validity and semantic validity. A field can be valid in isolation but still be wrong in another context. Validation at the TelemetryEvent model level helps enforce meaning of the fields, not just shape.
+
+### Notes
+The next step is to add proper automated tests for the contract so that valid and invalid event behaviour can be checked repeatedly as the project grows.
+
+### Issue encountered
+Initially I used `@field_validator(mode="after")` for event type validation, which caused a TypeError because field validators require a specific field name, but the fields are associated with a universal TelemetryEvent model schema, so I couldn't validate them in isolation.
+
+### Resolution
+Replaced with `@model_validator(mode="after")`, which is designed for validating relationships across multiple fields rather than just singular field validation rules.
+
+### Learning
+Field validators operate on individual fields, while model validators operate on the entire object. So, event type aware validation requires model-level validation.
+
+### Additional issue encountered
+Using `use_enum_values=True` caused enum fields such as `event_type` to behave like plain strings inside the model, which broke conditional validation logic that based on enum comparisons.
+
+### Resolution
+Removed `use_enum_values=True` from the model configuration and used `model_dump(mode="json")` when serializing output instead so the use of enum comparison logic is not broken.
+
+### Learning
+It is better to keep enums as typed values inside the model for internal validation and logic, then convert them to JSON only when exporting or printing data to avoid encountering this issue again.
+
+---

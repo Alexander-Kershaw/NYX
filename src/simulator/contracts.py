@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 """
 Defined a strict class structure using Enum (keeps values consistent) random strings cannot
@@ -90,9 +90,7 @@ class TelemetryEvent(BaseModel):
 
     @field_validator("packet_integrity_score")
     @classmethod
-    def validate_packet_integrity_score(
-        cls, value: Optional[float]
-    ) -> Optional[float]:
+    def validate_packet_integrity_score(cls, value: Optional[float]) -> Optional[float]:
         if value is not None and not 0 <= value <= 1:
             raise ValueError("packet_integrity_score must be between 0 and 1")
         return value
@@ -110,3 +108,40 @@ class TelemetryEvent(BaseModel):
         if value is not None and not -180 <= value <= 180:
             raise ValueError("longitude must be between -180 and 180")
         return value
+
+
+    # Validate that the required fields in the TelemetryEvent baseline model for each distict event type are present
+    @model_validator(mode="after")
+    def validate_event_type_requirements(self) -> "TelemetryEvent":
+        event_type = self.event_type.value if isinstance(self.event_type, Enum) else str(self.event_type) # works for both str or Enum values
+
+        required_by_type = {
+            "navigation": {
+                "latitude": self.latitude,
+                "longitude": self.longitude,
+                "altitude_km": self.altitude_km,
+                "velocity_kms": self.velocity_kms,
+            },
+            "power": {
+                "battery_pct": self.battery_pct,
+            },
+            "thermal": {
+                "temperature_c": self.temperature_c,
+            },
+            "comms": {
+                "signal_strength_db": self.signal_strength_db,
+                "uplink_latency_ms": self.uplink_latency_ms,
+                "downlink_latency_ms": self.downlink_latency_ms,
+                "packet_integrity_score": self.packet_integrity_score,
+                "auth_status": self.auth_status,
+            },
+        }
+
+        required_fields = required_by_type.get(event_type, {})
+        missing_fields = [field_name for field_name, value in required_fields.items() if value is None]
+
+        if missing_fields:
+            missing_str = ", ".join(missing_fields)
+            raise ValueError(f"{event_type} event is missing required field(s): {missing_str}")
+
+        return self
