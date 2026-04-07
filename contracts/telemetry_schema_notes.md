@@ -419,3 +419,17 @@ The simulator should eventually generate both:
 This helps make the platform more realistic and gives the later detection layer a stronger purpose.
 
 ---
+
+## Implementation Note
+
+The first executable version of the telemetry contract is implemented as a Pydantic model.
+
+This contract currently enforces:
+- required common fields universal to all event types
+- allowed categorical values via enums
+- numeric sanity checks for selected fields
+- conditional required fields based on specific event types
+
+This allows the simulator and later ingestion stages to validate telemetry consistently before writing data downstream.
+
+---

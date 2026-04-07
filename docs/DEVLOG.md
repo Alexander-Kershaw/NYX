@@ -179,4 +179,25 @@ The next step is to build a simple simulator loop that emits a sequence of mixed
 
 ---
 
+## Entry 010 - First Simulator Loop (Tuesday 7th April 2026)
+
+### What I did
+- Built the first NYX simulator loop to emit a repeating stream of mixed and distinct telemetry events
+- Added an ordered cycle of event factories covering the event types: heartbeat, navigation, power, thermal, and comms
+- Added basic command line arguments to control the number of emitted events and the delay between events
+- Added a test to verify that the simulator factory cycle contains the expected event types in the expected order
+
+### Why I did it
+The project needed to move from singular event generation to a controlled telemetry stream. The simulator loop provides the first version of continuous event emission while still staying simple and easy to reason about.
+
+### What I learned
+A simulator is more than just an arbitrary random event generator. It needs an orchestration layer that controls cadence and event mix. Starting with a deterministic cycle makes the system easier to debug before introducing more realism with satellite specific awareness or randomness, and eventual anomalous telemetry injections.
+
+### Notes
+The next step is to improve realism by introducing per-satellite state, so repeated events from the same satellite evolve more coherently over time instead of being generated as isolated snapshots.
+
+---
+
+
+
 
