@@ -198,6 +198,22 @@ The next step is to improve realism by introducing per-satellite state, so repea
 
 ---
 
+## Entry 011 - Per-Satellite State and Stateful Simulator (Tuesday 7th April 2026)
 
+### What I did
+- Added a SatelliteState model to represent the instantaneous internal state of each simulated satellite
+- Built a state manager to initialize the fleet and evolve navigation, power, thermal, and comms metrics over time
+- Added satellite state aware event builders that create telemetry directly from current satellite state so events make more sense in sequence
+- Built a stateful simulator loop that updates satellite state before emitting relevant event types
+- Added automated tests for state initialization, state evolution, and stateful event generation
 
+### Why I did it
+The earlier simulator emitted valid events, but each event was largely independent. Introducing a per-satellite state makes the telemetry stream more realistic by giving each satellite continuity over time rather than just a collection of independent snapshots of telemetry in time.
 
+### What I learned
+A simulator becomes much more believable when it remembers its previous conditions. Stateful simulation creates temporal coherence, which is important for anomaly detection, authentic operational analytics, and realistic debugging down the line.
+
+### Notes
+The next step is to add controlled anomaly injection so the stateful simulator can produce both nominal and suspicious telemetry patterns so monitoring has an actual purpose later in the project.
+
+---
