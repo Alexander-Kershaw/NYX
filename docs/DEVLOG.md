@@ -258,3 +258,22 @@ The next step is to persist simulator output to a file, so NYX can generate stru
 
 ---
 
+## Entry 014 - Persisting Telemetry to JSONL Files (Thursday 9th April 2026)
+
+### What I did
+- Added IO helper functions for creating output directories and timestamped JSONL file paths
+- Updated the stateful simulator so it can optionally write emitted telemetry to disk while still printing events to the terminal
+- Configured the simulator to write one JSON event per line in a JSONL output file
+- Added automated tests for the output directory and file path helper functions
+
+### Why I did it
+The simulator needed to move beyond terminal only output and start producing reusable telemetry artifacts. Writing JSONL files creates a local bronze layer dataset that can later feed validation, analytics, and cloud ingestion steps.
+
+### What I learned
+JSONL is a strong fit for event oriented data because it is append friendly, easy to inspect, and more simple to parse. Separating output path logic into a helper module keeps file management clean and avoids cluttering the simulator loop.
+
+### Notes
+The next step is to add summary statistics or run metadata so each simulator execution produces not just raw telemetry but also a small operational summary of what happened during the run.
+
+---
+

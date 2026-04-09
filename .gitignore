@@ -27,3 +27,6 @@ build/
 # IDE
 .vscode/
 .idea/
+
+# Nyx simulator output
+output/
