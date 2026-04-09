@@ -12,3 +12,10 @@ def generate_output_filepath(output_dir: str | Path, prefix: str) -> Path:
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     
     return directory / f"{prefix}_{timestamp}.jsonl"
+
+
+def generate_summary_filepath(output_dir: str | Path, prefix: str = "Telemetry Simulation Summary") -> Path:
+    directory = output_directory(output_dir)
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    
+    return directory / f"{prefix}_{timestamp}.json"

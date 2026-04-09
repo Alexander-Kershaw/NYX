@@ -277,3 +277,25 @@ The next step is to add summary statistics or run metadata so each simulator exe
 
 ---
 
+## Entry 015 - Run Metadata and Summary Statistics (Thursday 9th April 2026)
+
+### What I did
+- Added a structured run summary model for telemetry simulator executions
+- Updated the stateful simulator to track event counts and anomaly counts during a run for summaries
+- Added grouped counts for emitted event types and anomaly types
+- Configured the simulator to print a run summary at the end of execution
+- Added optional JSON summary file output alongside the JSONL telemetry output
+- Added automated tests for summary path generation and summary model behaviour
+
+### Why I did it
+Raw telemetry output is useful, but each simulator run should also leave behind a concise operational summary. This makes the simulator easier to inspect, debug, document, and validate.
+
+### What I learned
+A run summary in the context of satellite telemetry is potentially reminicent of a mission sensitive operational report. It gives immediate visibility into what happened during a satellite simulation run without needing to manually scan the entire telemetry output file.
+
+### Notes
+The next step is to begin building a lightweight validation and analysis layer over the generated telemetry, starting with reading JSONL output back in and checking quality metrics.
+
+---
+
+
