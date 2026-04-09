@@ -1,6 +1,9 @@
 from enum import Enum
+from random import choice, random
 
 from simulator.state import SatelliteState
+from simulator.contracts import EventType
+
 
 class AnomalyType(str, Enum):
     BATTERY_DRAIN_SPIKE = "battery_drain_spike"
@@ -35,3 +38,29 @@ def apply_anomaly_to_state(state: SatelliteState, anomaly_type: AnomalyType) -> 
 
     else:
         raise ValueError(f"Unsupported anomaly type: {anomaly_type}")
+    
+
+
+def anomalies_for_event_type(event_type: EventType) -> list[AnomalyType]:
+    
+    allowed_anomalies = {
+        EventType.POWER: [AnomalyType.BATTERY_DRAIN_SPIKE],
+        EventType.THERMAL: [AnomalyType.THERMAL_RUNAWAY],
+        EventType.COMMS: [AnomalyType.SIGNAL_DEGRADATION, AnomalyType.SPOOFED_SOURCE],
+        EventType.HEARTBEAT: [],
+        EventType.NAVIGATION: []
+    }
+
+    return allowed_anomalies.get(event_type, [])
+
+
+def anomaly_choice_for_event_type(event_type: EventType, anomaly_rate: float) -> AnomalyType | None:
+    permitted_anomalies = anomalies_for_event_type(event_type)
+
+    if not permitted_anomalies:
+        return None
+    
+    if random() < anomaly_rate:
+        return choice(permitted_anomalies)
+    
+    return None

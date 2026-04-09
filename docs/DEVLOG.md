@@ -237,3 +237,24 @@ Anomalies are more useful when they are named, bounded, and intentionally applie
 The next step is to integrate anomaly injection into the simulator loop with a configurable anomaly rate so NYX can emit both normal and anomalous telemetry during a single run.
 
 ---
+
+## Entry 013 - Anomaly Stateful Simulator Loop (Thursday 9th April 2026)
+
+### What I did
+- Added helper functions to map anomaly types to supported event types
+- Added probability based anomaly selection using a configurable anomaly rate
+- Updated the stateful simulator loop to optionally inject anomalies during live event emission
+- Added a command line parameter to control anomaly frequency during simulator runs
+- Added automated tests for anomaly selection behaviour
+
+### Why I did it
+The simulator needed to move beyond just isolated anomaly emissions and start producing mixed operational streams containing both healthy and anomalous telemetry. This makes the project much more useful for the planned downstream validation, alerting, and analytics work.
+
+### What I learned
+Anomaly injection becomes much more manageable when it is constrained by event type and driven by explicit probability. This avoids unrealistic combinations and keeps the simulator output interpretable.
+
+### Notes
+The next step is to persist simulator output to a file, so NYX can generate structured telemetry datasets for later validation, analysis, and cloud ingestion.
+
+---
+
