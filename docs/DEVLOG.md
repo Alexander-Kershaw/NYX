@@ -298,4 +298,26 @@ The next step is to begin building a lightweight validation and analysis layer o
 
 ---
 
+## Entry 016 - Telemetry Reader and JSONL Validation (Thursday 9th April 2026)
+
+### What I did
+- Added a validation summary model for JSONL telemetry file inspection
+- Built a reader module that parses JSONL line by line and validates each record against the TelemetryEvent data contract
+- Counted valid and invalid records, grouped valid events by event type, and grouped anomalous events by anomaly type
+- Added a CLI validation script for inspecting generated telemetry files
+- Added automated tests for valid files, mixed valid/invalid files, and files containing injected anomalies
+
+### Why I did it
+NYX needed to consume its own generated telemetry rather than only producing it. This validation step acts like an early data quality gate and makes the local output much more useful for debugging and later ingestion work before introducing any cloud infrastructure to the project.
+
+### What I learned
+A telemetry pipeline is stronger when the same data contract is used both at generation time and at validation time as a single source of truth. Reusing the contract reduces duplicated logic and helps ensure that the simulator and the reader agree concretely on what a valid event looks like.
+
+### Notes
+The next step is to build a lightweight analysis script on top of the validated telemetry so NYX can report simple operational findings, such as anomaly rate, battery distributions, or event type mix from a generated file.
+
+---
+
+
+
 
