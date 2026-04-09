@@ -318,6 +318,25 @@ The next step is to build a lightweight analysis script on top of the validated 
 
 ---
 
+## Entry 017 - Telemetry Analysis (Thursday 9th April 2026)
+
+### What I did
+- Implemented a telemetry analysis summary model for reporting simple metrics from validated JSONL files
+- Built an analysis module that reads telemetry output, validates records, and computes event counts, anomaly counts, anomaly rate, and basic numeric summaries
+- Added a CLI script to run the telemetry analysis from the command line
+- Added automated tests for numeric summarization, file analysis, anomaly rate calculation, and invalid record handling
+
+### Why I did it
+Validation tells me whether the telemetry file is structurally correct (the data contract has been enforced), but analysis tells me what the file actually contains. This step starts turning simulator output into actual operational insight rather than just displaying the raw records.
+
+### What I learned
+Even a small analysis layer adds a lot of value when it is built on top of the same validation contract. It becomes much easier to reason about event mix, anomaly prevalence, and the basic shape of important metrics such as battery, temperature, and latency.
+
+### Notes
+The next step is to build a small run comparison workflow so NYX can compare two simulator outputs and show how anomaly rate or metric distributions differ between runs.
+
+---
+
 
 
 
