@@ -217,3 +217,23 @@ A simulator becomes much more believable when it remembers its previous conditio
 The next step is to add controlled anomaly injection so the stateful simulator can produce both nominal and suspicious telemetry patterns so monitoring has an actual purpose later in the project.
 
 ---
+
+## Entry 012 - Controlled Anomaly Injection (Thursday 9th April 2026)
+
+### What I did
+- Added an anomaly module with named anomaly types for battery drain, thermal runaway, signal degradation, and spoofed source behaviour
+- Implemented controlled anomaly injection functions that mutate satellite state or affect event context according to the anomaly being injected
+- Updated the stateful event builders so emitted telemetry can carry anomaly metadata and degraded status markers
+- Created a test script to show nominal and anomalous telemetry side by side verifying injection works
+- Added automated tests covering state mutation and anomaly aware event generation
+
+### Why I did it
+The project needed a deliberate way to simulate incidents rather than relying only on healthy telemetry. Controlled anomaly injection makes the simulator useful for testing future validation, alerting, and anomaly detection logic.
+
+### What I learned
+Anomalies are more useful when they are named, bounded, and intentionally applied to nominal satellite states. Separating normal state evolution from anomaly injection makes the simulator easier to reason about and makes future detection logic more defensible.
+
+### Notes
+The next step is to integrate anomaly injection into the simulator loop with a configurable anomaly rate so NYX can emit both normal and anomalous telemetry during a single run.
+
+---
