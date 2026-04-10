@@ -337,6 +337,21 @@ The next step is to build a small run comparison workflow so NYX can compare two
 
 ---
 
+## Entry 018 - Telemetry Comparison (Friday 10th April 2026)
 
+### What I did
+- Added a comparison summary model for comparing two distinct analyzed telemetry runs
+- Built comparison logic to evaluate changes in anomaly rate, event counts, anomaly counts, and selected metric averages
+- Added a CLI script to compare two JSONL telemetry outputs directly from the command line
+- Added automated tests for metric delta handling and comparison logic
+
+### Why I did it
+Singular analysis is useful, but operational work often depends on comparison and evolution over time. This step allows NYX to show how one simulator run differs from another, which is useful for anomaly-heavy versus anomaly-light runs and later for monitoring drift or changes in simulated system behaviour.
+
+### What I learned
+Comparison logic is easiest to build when each run already has a clean analysis summary. That separation keeps the design simple: first summarize each run, then compare the summaries rather than trying to compare raw files directly.
+
+### Notes
+The next step is likely just some housekeeping before I consider staging the project to use cloud infrastructure: documenting the simulator subsystem properly, reviewing the repository structure, and deciding whether to move next into local bronze/silver processing or detection and alerting logic.
 
 
