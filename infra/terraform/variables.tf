@@ -1,0 +1,33 @@
+variable "aws_region" {
+    description = "AWS region for NYX cloud infrastructure"
+    type = string
+}
+
+variable "project_name" {
+    description = "Project name used for any tagging and naming"
+    type = string
+    default = "NYX"
+}
+
+variable "environment" {
+    description = "Deployment environment name"
+    type = string
+    default = "dev"
+}
+
+variable "s3_bucket_name" {
+    description = "Globally unique S3 bucket name for the NYX bronze layer data"
+    type = string
+}
+
+variable "kinesis_stream_name" {
+    description = "Name of the Kinesis stream for the NYX telemetry ingestion"
+    type = string
+    default = "NYX-telemetry-stream"
+}
+
+variable "lambda_function_name" {
+    description = "Name of the Lambda bronze landing consumer"
+    type = string
+    default = "NYX-bronze-landing_consumer"
+}

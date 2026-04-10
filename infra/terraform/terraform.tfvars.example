@@ -1,0 +1,7 @@
+aws_region = "eu-west-2"
+project_name = "NYX"
+environment = "dev"
+s3_bucket_name = "NYX-telemetry-example-2026-dev" 
+kinesis_stream_name = "NYX-telemetry-stream"
+lambda_function_name = "NYX-bronze-landing-consumer"
+

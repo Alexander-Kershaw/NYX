@@ -376,3 +376,182 @@ This local rule based alerting pattern is a strong candidate for the future clou
 
 ---
 
+## Notes On The Cloud Engineering Aspects of NYX
+
+Since the underlying observation, alerting, data contract enforcement, and telemetry structure are now completed locally in a manner that is easily scalable and extensible (I might augment the complexity of the telemetry platform), I have considered some approaches for cloud integration.
+
+First, I have elected that NYX should have a streaming cloud ingestion architecture over a batch ingestion since this seems more in line with an actual satellite intelligence platform. So NYX will have streaming AWS ingestion, laking the local simulator telemetry and ingesting to to a AWS native raw landing zone. 
+
+The cloud shape I am considering is the following:
+
+- Kinesis data stream
+- Lambda consumer
+- S3 bronze raw landing
+- CloudWatch logs
+
+The current simulator emits structured telemetry events one at a time in sequence, which comfortable allows me to construct a producer for a data stream.
+
+I decided that Kinesis is a good ingestion buffer as it provides: streaming semantics, durability for incoming records, decoupling between the stream producer and consumer, and has a proper AWS telemetry ingestion.
+
+Lambda allows for serverless processing, a direct connection from Kinesis, a low operational overhead, and some room for validation and enrichment later on.
+
+S3 bronze storage is durable, allows for replayability, serves as a good future analytics path, and also serves the foundation for a medallion lakehouse architecture (bronze/silver/gold).
+
+Cloudwatch would provide visibility, debugging, and error tracing.
+
+This initial cloud architecture is what I will be implementing as a baseline. After I have confidently verified that NYX can stream telemetry into AWS and land the raw records cleanly into an S3 bronze layer, I can consider adding other services such as grafana, Athena, Glue, and such. 
+
+### The Streaming Ingestion Foundation
+
+The objective is to get live telemetry events from the local NYX telemetry simulator into AWS and land this data into an S3 storage bronze layer through a serverless comsumer.
+
+Initially I want to establish the following:
+- Kinesis stream
+- An S3 bucket
+- Lambda consumer
+- IAM roles and policies
+- CloudWatch logs
+- Infrastructure as code (terraform)
+- A local producer script that sends simulator events to Kinesis as JSON
+
+Later I can add the following:
+- Silver transformations
+- Athena SQL queries
+- Alerting within the cloud
+- Data quarantine policy
+- Dashboards
+- SNS notifications
+
+### Data FLow Overview
+
+1) Local NYX simulator emits a JSON telemetry event
+2) The telemetry output is sent to Kinesis as JSON via a producer script
+3) Kinesis buffers the event
+4) Lambda consumer is triggered by the Kinesis records
+5) Lambda proceeds to write raw event JSON into S3 under a bronze prefix
+6) Lambda logs write success/failure details to CloudWatch
+
+### S3 Bronze Layout
+
+The following layout is considered: 
+
+```bash
+s3://NYX/
+  bronze/
+    telemetry/
+      ingestion_date=YYYY-MM-DD/
+        satellite_id=NYX-SAT-001/
+          <events>.jsonl
+```
+
+This S3 bucket architecture clearly marks raw landed telemetry with `bronze/telemetry/`, and the ingestion date provides date partitioning (partitioning is a good practice for efficient database searches), and the satellite id provides further partitioning which is useful for organisation. 
+
+This layout supports the later planned Athena / Glue work.
+
+I could do temporal partitioning such as partitions by hour, but I will keep it simple for now.
+
+### Object Writing
+
+I have decided to have lambda batch multiple Kinesis records into a single S3 object.
+
+So, the lambda consumer receives a batch from Kinesis, decodes the records from the batch, then writes them as a JSONL payload to a single S3 object.
+
+Each Lambda invocation produces one law landing object containing multiple events.
+
+
+### Kinesis Design
+
+I am starting with 1 shard, this should be enough to show producer / consumer integration and the intended streaming design without excessive project scope.
+
+The record payload is a UTF-8 JSON string, and one elemetry event partitioned by the key `satellite_id`.
+
+### Lambda Consumer Responsibilities
+
+Initially Lambda needs only to do the following:
+
+- Decode Kinesis records
+- parse payloads as JSON
+- potentially could do minimal validation
+- write batches to S3 as JSONL
+- log metadata to CloudWatch
+
+If this all works as intended then I will move on to anomaly detection, alert generation, quarantine routines, metric aggregation, and data enrichment
+
+### Initial Validation Approach
+
+Initially I want to only do minimal validation only for the following:
+
+- JSON decode must be successful
+- confirm core keys exist: event_id, event_timestamp, satellite_id, event_type
+- Invalid records are logged in CloudWatch and skipped for now (quarantine paths come later)
+
+
+### IAM Policies and Basic Security
+
+For some basic security I will consider the following:
+
+- S3 bucket has blocked public access, enabled encryption at rest, maybe versioning
+- Lambda execution should allow writes to S3 bucket bronze prefix, writes to CloudWatch logs, and reads from the Kinesis stream event source mapping context
+
+I will need to think about the producer credentials.
+
+The best approach for this initial stage could involve unsing a local AWS CLI profile / IAM user credentials. The producer script can use the boto3 library locally.
+
+### Initial Observability Principles
+
+Keeping this light for now. The CloudWatch logs from Lambda may include batch size, the number of records written to S3 successfully, the target S3 object key, the skipped/failed record write count. Later one I can implement custom metrics, alarms and dashboards.
+
+### Artifact flow
+
+Because I am extending NYX to cloud, it essentially has two output modes: local artifacts, and the streaming cloud path.
+
+The local artifacts or the telemetry JSONL files, the run summaries, the alerts JSONL, and the alert summaries.
+
+For the streaming cloud path, initially I will only stream the raw telemetry events to AWS in near real time. I am not going to stream the summaries and alerts to AWS because when the cloud alerting is implemented, the cloud alerts become their own artifact stream, there would be little point having two streams of artifacts effectively saying the same thing.
+
+---
+
+## Entry 020 - Streaming Cloud Ingestion Design (Friday 10th April 2026)
+
+### What I did
+- Defined the first cloud architecture for NYX as a streaming ingestion path
+- Chose Kinesis Data Streams as the ingestion layer and Lambda as the serverless consumer
+- Defined S3 bronze landing as the first raw cloud storage target
+- Chose a batch to object Lambda write pattern to avoid inefficient one object per event behaviour
+- Scoped the first cloud implementation strategy to streaming ingestion, raw landing, logging, and infrastructure provisioning and nothing more as a baseline
+
+### Why I did it
+NYX is fundamentally a telemetry and monitoring platform, so a streaming ingestion path is a better fit than a purely batch cloud design. This architecture preserves the real time streaming essence of the simulator while still staying manageable for the scope of this project.
+
+### What I learned
+A good streaming architecture does not need to include every AWS service at once, this would be overhelming and overcomplicating the deliverable. Kinesis, Lambda, S3, and CloudWatch are enough to establish an effective near real time streaming ingestion foundation without overcomplicating the system.
+
+### Notes
+The next step is to create the Terraform skeleton for the cloud resources and begin provisioning the first streaming ingestion components.
+
+---
+
+## Entry 021 - Cloud Infrastructure Skeleton and Initial Terraform Setup (Friday 10th April 2026)
+
+### What I did
+- Created the initial cloud centric repository structure for NYX
+- Added a dedicated Terraform directory under infra/terraform
+- Added initial Terraform files for provider configuration, variables, outputs, and example variable values
+- Added placeholder Python modules for the future Kinesis producer and Lambda consumer
+- Initialized Terraform locally to confirm the infrastructure scaffold is ready for resource implementation
+
+### Why I did it
+Before provisioning any AWS resources, I wanted a clean and intentional infrastructure layout as a foundational scaffold to build from. This makes the cloud implementation easier to build, explain, and maintain without mixing infrastructure code into the simulator logic which can end up messy.
+
+### What I learned
+A good infrastructure project benefits from the same discipline as applied in application code: structure first, followed by resources. Even a small Terraform scaffold makes the cloud work feel more deliberate and allows me to more easily see what to extend and why.
+
+### Notes
+The next step is to add the first real AWS resources, the S3 bronze landing bucket and the Kinesis telemetry stream.
+
+---
+
+
+
+
+
