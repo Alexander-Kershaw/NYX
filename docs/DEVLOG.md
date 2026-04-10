@@ -551,6 +551,40 @@ The next step is to add the first real AWS resources, the S3 bronze landing buck
 
 ---
 
+## Entry 022 - Initial AWS Resources: S3 Bronze Bucket and Kinesis Stream (Friday 10th April 2026)
+
+### What I did
+- Added the first real AWS resources to the NYX Terraform configuration
+- Created a secure S3 bronze bucket with versioning, server-side encryption, and public access blocking
+- Created a Kinesis Data Stream for NYX telemetry ingestion
+- Updated Terraform outputs to reference live resource attributes rather than only configuration variables
+- Ran Terraform formatting, validation, and planning to confirm the initial cloud resources are valid and ready to provision
+
+### Why I did it
+This step establishes the first real cloud foundation for NYX. The S3 bucket provides durable raw storage for landed telemetry, while Kinesis provides the streaming ingestion layer that matches the telemetry-driven nature of the project.
+
+### What I learned
+Even a small AWS footprint benefits from baseline security controls. S3 encryption, blocked public access, and clear tagging are simple additions that materially improve the credibility of the infrastructure.
+
+### Authentication Issue
+Terraform configuration validated successfully, but the first plan failed because no AWS credential source was configured locally.
+
+### Resolution
+I created a new IAM user specifically for this project, granted it programmatic access and full S3 access initially, this will be reconfigured down the line for more secure permissions and role allocations in future.
+
+I then Configured local AWS credentials via AWS CLI and verified access using `aws sts get-caller-identity` before rerunning Terraform plan.
+
+### Security refinement
+Before applying the first cloud resources, I enabled server-side encryption for the Kinesis stream using the AWS-managed Kinesis KMS key. This brought the ingestion layer more in line with the security already applied to the S3 bronze bucket, both now have encryption.
+
+### Learning
+Valid Terraform syntax is not enough for cloud provisioning. The provider also needs authenticated access to the target AWS account in order to build a real execution plan.
+
+Baseline security controls should be applied early when they are cheap to add. Although, leaving the stream unencrypted would have worked technically, but it would have been a weaker engineering choice for a telemetry and defence/intelligence centered platform.
+
+### Notes
+The next step is to add the Lambda consumer infrastructure, including the execution role and the event source mapping from Kinesis to Lambda.
+
 
 
 
