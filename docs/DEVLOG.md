@@ -354,4 +354,25 @@ Comparison logic is easiest to build when each run already has a clean analysis 
 ### Notes
 The next step is likely just some housekeeping before I consider staging the project to use cloud infrastructure: documenting the simulator subsystem properly, reviewing the repository structure, and deciding whether to move next into local bronze/silver processing or detection and alerting logic.
 
+---
+
+## Entry 019 - Local Rule Based Alerting (Friday 10th April 2026)
+
+### What I did
+- Added a dedicated alert contract with alert types and severities
+- Built a local rules engine that evaluates telemetry events for low battery, high temperature, weak signal, high latency, failed authentication, anomaly flags, and composite signals representing a more significant security breach (packet degradation, authentication failure, and anomaly flagged).
+- Added alert generation from JSONL telemetry files
+- Added alert summary output and optional alert JSONL
+- Added automated tests for alert rule evaluation and file based alert generation
+
+### Why I did it
+This completes the local monitoring by allowing NYX not only to simulate telemetry and anomalies, but also to actively detect suspicious conditions and generate alert artifacts, so it doesnt just emit information but also evaluates itself. It makes the project act much more like an actual operational telemetry platform.
+
+### What I learned
+Telemetry and alerts are related but distinct layers. A telemetry event describes system state, while an alert represents a judgement that the state deserves attention. Separating those concepts makes the platform clearer and easier to extend in future as I may look into more nunances regarding satellite operational fields and further potential anomalies.
+
+### Notes
+This local rule based alerting pattern is a strong candidate for the future cloud based intentions for the project, where similar logic can be migrated into AWS services such as Lambda, S3, and SNS so it is easily transferable.
+
+---
 
