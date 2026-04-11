@@ -570,7 +570,7 @@ Even a small AWS footprint benefits from baseline security controls. S3 encrypti
 Terraform configuration validated successfully, but the first plan failed because no AWS credential source was configured locally.
 
 ### Resolution
-I created a new IAM user specifically for this project, granted it programmatic access and full S3 access initially, this will be reconfigured down the line for more secure permissions and role allocations in future.
+I created a new IAM user specifically for this project, granted it programmatic access and full S3 access and Kinesis full access initially under an admin group I constructed, this will be reconfigured down the line for more secure permissions and role allocations in future.
 
 I then Configured local AWS credentials via AWS CLI and verified access using `aws sts get-caller-identity` before rerunning Terraform plan.
 

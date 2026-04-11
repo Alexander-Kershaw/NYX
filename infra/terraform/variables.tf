@@ -6,7 +6,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Project name used for any tagging and naming"
   type        = string
-  default     = "NYX"
+  default     = "nyx"
 }
 
 variable "environment" {
@@ -23,13 +23,13 @@ variable "s3_bucket_name" {
 variable "kinesis_stream_name" {
   description = "Name of the Kinesis stream for the NYX telemetry ingestion"
   type        = string
-  default     = "NYX-telemetry-stream"
+  default     = "nyx-telemetry-stream"
 }
 
 variable "lambda_function_name" {
   description = "Name of the Lambda bronze landing consumer"
   type        = string
-  default     = "NYX-bronze-landing_consumer"
+  default     = "nyx-bronze-landing_consumer"
 }
 
 variable "kinesis_shard_count" {

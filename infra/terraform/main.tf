@@ -12,7 +12,7 @@ locals {
 
 #===================================================================================================================
 
-resource "aws_s3_bucket" "NYX_bronze" {
+resource "aws_s3_bucket" "nyx_bronze" {
   bucket = var.s3_bucket_name
 
   tags = merge(
@@ -23,16 +23,16 @@ resource "aws_s3_bucket" "NYX_bronze" {
   )
 }
 
-resource "aws_s3_bucket_versioning" "NYX_bronze_versioning" {
-  bucket = aws_s3_bucket.NYX_bronze.id
+resource "aws_s3_bucket_versioning" "nyx_bronze_versioning" {
+  bucket = aws_s3_bucket.nyx_bronze.id
 
   versioning_configuration {
     status = var.enable_s3_versioning ? "Enabled" : "Suspended"
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "NYX_bronze_encryption" {
-  bucket = aws_s3_bucket.NYX_bronze.id
+resource "aws_s3_bucket_server_side_encryption_configuration" "nyx_bronze_encryption" {
+  bucket = aws_s3_bucket.nyx_bronze.id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -41,8 +41,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "NYX_bronze_encryp
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "NYX_bronze_public_access" {
-  bucket = aws_s3_bucket.NYX_bronze.id
+resource "aws_s3_bucket_public_access_block" "nyx_bronze_public_access" {
+  bucket = aws_s3_bucket.nyx_bronze.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -56,7 +56,7 @@ resource "aws_s3_bucket_public_access_block" "NYX_bronze_public_access" {
 
 #===================================================================================================================
 
-resource "aws_kinesis_stream" "NYX_telemetry" {
+resource "aws_kinesis_stream" "nyx_telemetry" {
   name             = var.kinesis_stream_name
   shard_count      = var.kinesis_shard_count
   retention_period = 24

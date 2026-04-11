@@ -15,21 +15,21 @@ output "environment" {
 
 output "s3_bucket_name" {
   description = "Configured S3 bucket name for NYX bronze data"
-  value       = aws_s3_bucket.NYX_bronze.bucket
+  value       = aws_s3_bucket.nyx_bronze.bucket
 }
 
 output "s3_bucket_arn" {
   description = "ARN of the NYX bronze S3 bucket"
-  value       = aws_s3_bucket.NYX_bronze.arn
+  value       = aws_s3_bucket.nyx_bronze.arn
 }
 
 output "kinesis_stream_name" {
   description = "NYX telemetry Kinesis stream name"
-  value       = aws_kinesis_stream.NYX_telemetry.name
+  value       = aws_kinesis_stream.nyx_telemetry.name
 }
 
 output "kinesis_shard_arn" {
   description = "ARN of the NYX telemetry Kinesis stream"
-  value       = aws_kinesis_stream.NYX_telemetry.arn
+  value       = aws_kinesis_stream.nyx_telemetry.arn
 }
 
