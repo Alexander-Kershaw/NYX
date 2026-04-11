@@ -628,3 +628,34 @@ The next step is to build the local Kinesis producer and test the first complete
 
 ---
 
+## Entry 025 - First Full Cloud Telemetry Flow (Saturday 11th April 2026)
+
+### What I did
+- Built a local Kinesis producer that sends NYX telemetry events into the telemetry stream
+- Reused the existing event factory cycle so cloud ingestion uses the same event shapes and logic as the local simulator
+- Sent a controlled batch of telemetry events into AWS
+- Verified Lambda invocation and CloudWatch logs for the bronze landing consumer
+- Verified that raw telemetry batches were landed into the S3 bronze layer as JSONL objects
+
+### Why I did it
+This was the first true cloud test for NYX. It connected the local telemetry generator to the cloud ingestion pipeline and proved that the system can move events from producer to stream to serverless consumer to durable raw S3 storage.
+
+### What I learned
+A cloud pipeline is only really authentic once data actually moves through it. Deliberately witnessing the telemetry travel from a local producer into AWS and land successfully in S3 made the architecture much more concrete and exposed the importance of log inspection and verification.
+
+### Issue with S3 architecture semantics
+
+Although the pipeline works successfully, there is an issue with semantics in the S3 bronze layer. Lambda receives a batch of Kinesis records, decodes them, and looks at the first records satellite_id value, which means the entire batch is written to: `bronze/telemetry/ingestion_date=.../satellite_id=<first satellite>/batch_<uuid>.jsonl`. So if the batch contains the other satellite_id, this naming is misleading as the assumption is this is a bronze partition for exclusively the one satellite id, but the actual records contained all 3 satellite_id in events.
+
+Specifically, the first record for my pipeline test, streaming 10 events had the first record being `satellite_id=NYX-SAT-002`, and so the whole file lands under that satellite_id.
+
+This is a design bug, the data is fine but the folder is misleading. I want to solve this before dealing with Athena partitions, and I could handle partitions in a silver transformation layer and just have bronze partition by ingestion data or possible hour as well.
+
+### Notes
+
+First I will fix the bronze S3 key structure, removing satellite_id from the S3 path, keeping ingestion data as the partition, keeping the batched JSONL files and redeploy Lambda.
+
+Then the next step is to improve the cloud ingestion path with stronger validation and possibly a quarantine path for malformed records, or to begin adding query and analytics capability over the landed bronze data.
+
+---
+
