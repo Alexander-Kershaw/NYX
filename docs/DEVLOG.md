@@ -585,6 +585,28 @@ Baseline security controls should be applied early when they are cheap to add. A
 ### Notes
 The next step is to add the Lambda consumer infrastructure, including the execution role and the event source mapping from Kinesis to Lambda.
 
+---
+
+## Entry 023 - Lambda Bronze Landing Consumer (Local Build First) (Saturday 11th April 2026)
+
+### What I did
+- Implemented the first version of the NYX Lambda consumer for bronze landing
+- Added logic to decode Kinesis records from base64, parse JSON payloads, and batch valid records into a JSONL object
+- Added S3 object key generation for bronze telemetry landing using ingestion date and satellite ID
+- Added a mock Kinesis event fixture for local testing
+- Added automated tests for Kinesis record decoding and S3 key generation
+
+### Why I did it
+The AWS account was not yet ready for full deployment work due to a account verification issue which impacted my ability to establish any Kinesis infrastructure at this point, so I decided that the Lambda consumer logic could still be developed locally.
+
+### What I learned
+It is beneficial to maintain momentum in cloud projects is to separate service deployment from application logic. Even before any deployment, the Lambda function can be designed, tested, and documented locally using realistic event fixtures.
+
+### Notes
+The next step is to wire this consumer into Terraform by adding the Lambda execution role, Lambda resource, and Kinesis event source mapping once the account is ready.
+
+---
+
 
 
 
