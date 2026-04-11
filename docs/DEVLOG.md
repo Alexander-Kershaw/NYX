@@ -607,7 +607,24 @@ The next step is to wire this consumer into Terraform by adding the Lambda execu
 
 ---
 
+## Entry 024 - Lambda Deployment and Kinesis Event Source Mapping (Saturday 11th April 2026)
 
+### What I did
+- Added a packaging script for the NYX Lambda consumer including both cloud and simulator scripts so dependencies are accounted for
+- Added the Lambda execution role and inline IAM policy for CloudWatch logging, S3 writes, and Kinesis reads
+- Added relevant Lambda and IAM permissions to the nyx admin group containing the primary admin user I am using to allow terraform apply to finalize
+- Added the Lambda function resource to Terraform using the packaged deployment artifact
+- Added environment variables for bronze landing configuration
+- Added the Kinesis event source mapping so the Lambda can consume telemetry batches automatically
 
+### Why I did it
+This step turns the cloud architecture from separate resources into a connected ingestion pipeline. With the event source mapping in place, NYX now has the essential serverless path needed to receive telemetry events from the stream and land them into S3.
 
+### What I learned
+Connecting serverless components requires both infrastructure and workload packaging. The IAM role, Lambda packaging path, and event source mapping are all necessary pieces of the same pipeline, and missing any one of them breaks the flow.
+
+### Notes
+The next step is to build the local Kinesis producer and test the first complete streaming flow from simulator to Kinesis to Lambda to S3.
+
+---
 

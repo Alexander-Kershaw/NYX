@@ -30,3 +30,6 @@ build/
 
 # Nyx simulator output
 output/
+
+# Packaged lambda build and simulator
+build/

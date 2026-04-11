@@ -33,3 +33,17 @@ output "kinesis_shard_arn" {
   value       = aws_kinesis_stream.nyx_telemetry.arn
 }
 
+output "lambda_function_name" {
+  description = "NYX bronze landing Lambda function name"
+  value       = aws_lambda_function.nyx_bronze_landing_consumer.function_name
+}
+
+output "lambda_function_arn" {
+  description = "ARN of the NYX bronze landing Lambda function"
+  value       = aws_lambda_function.nyx_bronze_landing_consumer.arn
+}
+
+output "lambda_execution_role_arn" {
+  description = "ARN of the NYX Lambda execution role"
+  value       = aws_iam_role.nyx_lambda_execution_role.arn
+}

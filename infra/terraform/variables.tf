@@ -44,3 +44,32 @@ variable "enable_s3_versioning" {
   default     = true
 }
 
+variable "lambda_runtime" {
+  description = "Runtime for the NYX Lambda consumer"
+  type        = string
+  default     = "python3.11"
+}
+
+variable "lambda_handler" {
+  description = "Handler for the NYX Lambda consumer"
+  type        = string
+  default     = "cloud.lambda_consumer.lambda_handler"
+}
+
+variable "lambda_package_path" {
+  description = "Path to the packaged Lambda zip file"
+  type        = string
+  default     = "../../build/nyx_lambda_consumer.zip"
+}
+
+variable "lambda_timeout_seconds" {
+  description = "Timeout in seconds for the NYX Lambda consumer"
+  type        = number
+  default     = 30
+}
+
+variable "lambda_memory_mb" {
+  description = "Memory size in MB for the NYX Lambda consumer"
+  type        = number
+  default     = 256
+}
