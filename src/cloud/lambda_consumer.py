@@ -19,10 +19,10 @@ LOGGER.setLevel(logging.INFO)
 s3_client = boto3.client("s3")
 
 # Where each landed batch goes in the NYX bronze S3 bucket (example key: bronze/telemetry/ingestion_date=2026-04-11/satellite_id=NYX-SAT-001/batch_<uuid>.jsonl)
-def build_s3_object_key(*, prefix: str, satellite_id: str, timestamp: datetime, batch_id: str) -> str:
+def build_s3_object_key(*, prefix: str, timestamp: datetime, batch_id: str) -> str:
     ingestion_date = timestamp.strftime("%Y-%m-%d")
 
-    return (f"{prefix}/"f"ingestion_date={ingestion_date}/"f"satellite_id={satellite_id}/"f"batch_{batch_id}.jsonl")
+    return (f"{prefix}/"f"ingestion_date={ingestion_date}/"f"batch_{batch_id}.jsonl")
 
 # Decode base64 encoded Kinesis record and parse json
 def decode_kinesis_record(record: dict[str, Any]) -> dict[str, Any] | None:
@@ -59,13 +59,12 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             "decoded_records": 0
         }
     
-    satellite_id = str(decoded_records[0].get("satellite_id", "unknown"))
+
     timestamp = datetime.now(UTC)
     batch_id = str(uuid4())
 
     object_key = build_s3_object_key(
         prefix=bronze_prefix,
-        satellite_id=satellite_id,
         timestamp=timestamp,
         batch_id=batch_id
     )

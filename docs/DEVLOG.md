@@ -658,4 +658,22 @@ First I will fix the bronze S3 key structure, removing satellite_id from the S3 
 Then the next step is to improve the cloud ingestion path with stronger validation and possibly a quarantine path for malformed records, or to begin adding query and analytics capability over the landed bronze data.
 
 ---
+---
 
+## Entry 026 - Bronze Layer Partition Fix (Tuesday 14th April 2026)
+
+### What I did
+- I removed the satellite_id centered bronze partitioning from the bronze S3 object key in the lambda consumer code
+- Updated the lambda consumer to land telemetry batches using ingestion_date exclusively (not further partitioning)
+- Redeployed the Lambda function to AWS and verified new S3 object structure. Now the partitions make sense and are not misleading
+
+### Why I did it
+The previous design incorrectly implied that each landed batch contained data for a single satellite, which is not guaranteed when consuming batched records from Kinesis. This created a mismatch between storage layout and actual data.
+
+### What I learned
+Bronze data layers should remain as close to raw ingestion reality as possible. Partitioning based on payload fields should only be done when the ingestion process guarantees that structure, or later in downstream transformation layers.
+
+### Notes
+Future silver transformations can repartition data by satellite_id or other fields once records are validated and reorganized.
+
+---

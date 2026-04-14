@@ -10,7 +10,6 @@ def test_build_s3_object_key_returns_expected_prefix_structure() -> None:
 
     key = build_s3_object_key(
         prefix="bronze/telemetry",
-        satellite_id="NYX-SAT-001",
         timestamp=timestamp,
         batch_id="test-batch-123",
     )
@@ -18,7 +17,6 @@ def test_build_s3_object_key_returns_expected_prefix_structure() -> None:
     assert key == (
         "bronze/telemetry/"
         "ingestion_date=2026-04-11/"
-        "satellite_id=NYX-SAT-001/"
         "batch_test-batch-123.jsonl"
     )
 
