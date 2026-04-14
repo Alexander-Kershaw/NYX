@@ -4,7 +4,7 @@ locals {
     Environment = var.environment
     ManagedBy   = "Terraform"
   }
-  lambda_package_path = abspath("${path.module}/../../build/nyx_telemetry_consumer.zip")
+  lambda_package_path = abspath("${path.module}/../../build/nyx_lambda_consumer.zip")
 }
 
 #===================================================================================================================
@@ -170,8 +170,10 @@ resource "aws_lambda_function" "nyx_bronze_landing_consumer" {
 
   environment {
     variables = {
-      NYX_BRONZE_BUCKET = aws_s3_bucket.nyx_bronze.bucket
-      NYX_BRONZE_PREFIX = "bronze/telemetry"
+      NYX_BRONZE_BUCKET     = aws_s3_bucket.nyx_bronze.bucket
+      NYX_BRONZE_PREFIX     = "bronze/telemetry"
+      NYX_SILVER_PREFIX     = "silver/telemetry"
+      NYX_QUARANTINE_PREFIX = "quarantine/telemetry"
     }
   }
 

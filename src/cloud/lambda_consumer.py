@@ -9,6 +9,9 @@ from uuid import uuid4
 
 import boto3
 
+from pydantic import ValidationError
+from simulator.contracts import TelemetryEvent
+
 # Deployment note:
 # This module is intended to be packaged and deployed as the NYX bronze layer
 # landing Lambda function once the AWS account and Terraform resources are ready.
@@ -35,11 +38,58 @@ def decode_kinesis_record(record: dict[str, Any]) -> dict[str, Any] | None:
     except (KeyError, ValueError, json.JSONDecodeError) as exception:
         LOGGER.warning("Failure to decode Kinesis record: %s", exception)
         return None
+
+# Writes quaratine record  
+def build_quarantine_record(*, raw_record: dict[str, Any], ingestion_timestamp: str, error_message: str) -> dict[str, Any]:
+    return {
+        "ingestion_timestamp": ingestion_timestamp,
+        "error_type": "validation_error",
+        "error_message": error_message,
+        "raw_record": raw_record
+    }
+
+# Writes a batch of JSON records as JSONL to S3, returns object key if records are written
+def jsonl_batch_to_s3(
+        *,
+        bucket_name: str,
+        prefix: str,
+        records: list[dict[str, Any]],
+        timestamp: datetime,
+        batch_id: str
+) -> str | None:
+    if not records:
+        return None
     
+    s3_object_key = build_s3_object_key(
+        prefix=prefix,
+        timestamp=timestamp,
+        batch_id=batch_id
+    )
+
+    jsonl_payload = "\n".join(json.dumps(record) for record in records) + "\n"
+
+    s3_client.put_object(
+        Bucket=bucket_name,
+        Key=s3_object_key,
+        Body=jsonl_payload.encode("utf-8"),
+        ContentType="application/json"
+    )
+
+    return s3_object_key
+        
+
 # Lambda entry point (writing to S3)
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """
+    Consumes a Kinesis telemetry batch, then lands it into:
+    - bronze/raw
+    - silver/validated
+    - quarantine/invalid
+    """
     bucket_name = os.environ["NYX_BRONZE_BUCKET"]
     bronze_prefix = os.environ.get("NYX_BRONZE_PREFIX", "bronze/telemetry")
+    silver_prefix = os.environ.get("NYX_SILVER_PREFIX", "silver/telemetry")
+    quarantine_prefix = os.environ.get("NYX_QUARANTINE_PREFIX", "quarantine/telemetry")
 
     records = event.get("Records", [])
     LOGGER.info("Received %s Kinesis records", len(records))
@@ -56,39 +106,86 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return {
             "status": "no_valid_records",
             "received_records": len(records),
-            "decoded_records": 0
+            "decoded_records": 0,
+            "bronze_records": 0,
+            "silver_records": 0,
+            "quarantine_records": 0
         }
     
 
     timestamp = datetime.now(UTC)
-    batch_id = str(uuid4())
+    ingestion_timestamp = timestamp.isoformat()
+    bronze_batch_id = str(uuid4())
+    silver_batch_id = str(uuid4())
+    quarantine_batch_id = str(uuid4())
+    
+    valid_records: list[dict[str, Any]] = []
+    quarantine_records: list[dict[str, Any]] = []
 
-    object_key = build_s3_object_key(
+    for raw_record in decoded_records:
+        try:
+            validated_event = TelemetryEvent(**raw_record) # Validation against original pydantic model contract
+            validated_payload = validated_event.model_dump(mode="json")
+            validated_payload["validated_at"] = ingestion_timestamp
+            valid_records.append(validated_payload)
+        
+        except ValidationError as exception:
+            quarantine_records.append(
+                build_quarantine_record(
+                    raw_record=raw_record,
+                    error_message=str(exception),
+                    ingestion_timestamp=ingestion_timestamp
+                )
+            )
+
+    bronze_key = jsonl_batch_to_s3(
+        bucket_name=bucket_name,
         prefix=bronze_prefix,
+        records=decoded_records,
         timestamp=timestamp,
-        batch_id=batch_id
+        batch_id=bronze_batch_id
     )
 
-    jsonl_payload = "\n".join(json.dumps(record) for record in decoded_records) + "\n"
-
-    s3_client.put_object(
-        Bucket=bucket_name,
-        Key=object_key,
-        Body=jsonl_payload.encode("utf-8"),
-        ContentType="application/json"
+    silver_key = jsonl_batch_to_s3(
+        bucket_name=bucket_name,
+        prefix=silver_prefix,
+        records=valid_records,
+        timestamp=timestamp,
+        batch_id=silver_batch_id
     )
+
+    quarantine_key = jsonl_batch_to_s3(
+        bucket_name=bucket_name,
+        prefix=quarantine_prefix,
+        records=quarantine_records,
+        timestamp=timestamp,
+        batch_id=quarantine_batch_id
+    )
+
 
     LOGGER.info(
-        "Write %s decoded records(s) to s3://%s/%s",
+        (
+            "Batch processed: received=%s decoded=%s bronze=%s silver=%s "
+            "quarantine=%s bronze_key=%s silver_key=%s quarantine_key=%s"
+        ),
+        len(records),
         len(decoded_records),
-        bucket_name,
-        object_key
+        len(decoded_records),
+        len(valid_records),
+        len(quarantine_records),
+        bronze_key,
+        silver_key,
+        quarantine_key,
     )
 
     return {
         "status": "success",
         "received_records": len(records),
         "decoded_records": len(decoded_records),
-        "s3_bucket": bucket_name,
-        "s3_key": object_key
+        "bronze_records": len(decoded_records),
+        "silver_records": len(valid_records),
+        "quarantine_records": len(quarantine_records),
+        "bronze_key": bronze_key,
+        "silver_key": silver_key,
+        "quarantine_key": quarantine_key,
     }

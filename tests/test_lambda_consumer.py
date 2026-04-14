@@ -2,7 +2,7 @@ import base64
 import json
 from datetime import UTC, datetime
 
-from cloud.lambda_consumer import build_s3_object_key, decode_kinesis_record
+from cloud.lambda_consumer import build_s3_object_key, decode_kinesis_record, build_quarantine_record
 
 
 def test_build_s3_object_key_returns_expected_prefix_structure() -> None:
@@ -50,3 +50,18 @@ def test_decode_kinesis_record_returns_none_for_invalid_payload() -> None:
     decoded = decode_kinesis_record(record)
 
     assert decoded is None
+
+
+def test_build_quarantine_record_wraps_error_metadata() -> None:
+    raw_record = {"event_id": "evt-999999", "battery_pct": 150.0}
+
+    quarantine_record = build_quarantine_record(
+        raw_record=raw_record,
+        error_message="battery_pct must be between 0 and 100",
+        ingestion_timestamp="2026-04-11T10:00:00Z",
+    )
+
+    assert quarantine_record["ingestion_timestamp"] == "2026-04-11T10:00:00Z"
+    assert quarantine_record["error_type"] == "validation_error"
+    assert "battery_pct must be between 0 and 100" in quarantine_record["error_message"]
+    assert quarantine_record["raw_record"] == raw_record

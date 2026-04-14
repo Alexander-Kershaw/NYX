@@ -677,3 +677,53 @@ Bronze data layers should remain as close to raw ingestion reality as possible. 
 Future silver transformations can repartition data by satellite_id or other fields once records are validated and reorganized.
 
 ---
+
+## Entry 027 - Cloud Validation, Silver Landing, and Quarantine Routing
+
+### What I did
+- Upgraded the NYX Lambda consumer to validate decoded telemetry records using the shared TelemetryEvent contract
+- Added routing logic so decoded records are written to bronze as raw ingestion data, valid records are written to silver, and invalid records are wrapped with error metadata and written to quarantine
+- Added a validated_at field to silver records for lineage
+- Updated Terraform environment variables so the Lambda knows the bronze, silver, and quarantine prefixes
+- Redeployed the Lambda and prepared the pipeline for full end to end validation testing
+
+### Why I did it
+A telemetry ingestion pipeline should not assume every decoded record as equally trustworthy. This step adds a real cloud-side trust boundary by separating raw landed data from validated telemetry and malformed records.
+
+### What I learned
+Bronze, silver, and quarantine each serve different purposes within the medallion data architecture. Bronze preserves ingestion reality, silver represents validated trustworthy data, and quarantine captures records that need investigation without polluting trusted downstream layers with sufficient metadata for tracibility.
+
+### Notes
+The next step is to run a test that includes an intentionally invalid record so the quarantine path can be verified alongside normal bronze and silver routing.
+
+### Packaging issue encountered
+After adding validation on the cloud end with the shared Pydantic telemetry contract, Lambda invocations no longer produced S3 outputs. The issue was that the deployment zip only contained project source code and did not include the Pydantic dependency required at runtime.
+
+### Resolution
+Updated the Lambda packaging script to bundle Linux-compatible Pydantic dependencies into the deployment artifact before redeploying the function.
+
+### Learning
+Lambda deployment packages must include all dependencies in a format compatible with the Lambda execution environment. Local tests passing is not sufficient if the deployed artifact is missing required libraries it will not run on in the cloud environment.
+
+---
+---
+## Entry 028 - Quarantine Path Verification
+
+### What I did
+- Created a dedicated invalid telemetry event sender
+- Injected a deliberately invalid record into the Kinesis stream (battery_pct > 100)
+- Verified that the Lambda consumer routed the record correctly in AWS S3 console
+
+### Results
+- Bronze layer received the raw invalid record
+- Silver layer correctly excluded the invalid record
+- Quarantine layer stored the invalid record with validation error metadata
+- CloudWatch logs showed correct routing counts (bronze=1, silver=0, quarantine=1)
+
+### What I learned
+A robust data pipeline should explicitly handle invalid data, not just process valid data while not enforcing the underlying data contract. The quarantine layer provides traceability and debugging capability without polluting trusted datasets.
+
+### Notes
+This confirms that the NYX ingestion pipeline enforces data contracts in the cloud and maintains a clear separation between raw, validated, and invalid telemetry data
+
+---.
