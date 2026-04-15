@@ -788,3 +788,24 @@ Alerting infrastructure is only partially configured until the notification endp
 The next step is to update the Lambda consumer so records are published to the SNS topic during ingestion and alerts are sent to email.
 
 ---
+
+## Entry 033 - Cloud SNS Alert Publishing (Wednesday 15th April 2026)
+
+### What I did
+- Added SNS publish permission to the Lambda execution role
+- Added the SNS topic ARN as a Lambda environment variable
+- Extended the Lambda consumer to evaluate valid telemetry for alerting conditions
+- Added SNS message construction and publishing for all anomalous alert scenarios currently accounted for in the alerting engine script
+- Added automated tests for alert evaluation and message construction
+
+### Why I did it
+NYX needed to progress from storing and querying telemetry to reacting to important events in near real time. SNS provides a simple response path that makes the system feel more operational rather than just a purely analytical data platform.
+
+### What I learned
+An alerting channel becomes useful only when it is connected to clear rules and meaningful message content. Publishing an SNS message is technically simple, but building a useful alert requires enough context for a human to act on it effectively and with urgency.
+
+### Notes
+The next step is to verify the alert flow with a known alert populated telemetry event and confirm delivery through email and CloudWatch logs.
+
+---
+

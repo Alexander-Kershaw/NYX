@@ -2,7 +2,20 @@ import base64
 import json
 from datetime import UTC, datetime
 
-from cloud.lambda_consumer import build_s3_object_key, decode_kinesis_record, build_quarantine_record
+from cloud.lambda_consumer import (
+    build_s3_object_key,
+    decode_kinesis_record,
+    build_quarantine_record,
+    evaluate_sns_alert,
+    build_alert_message
+)
+
+from simulator.contracts import (
+    AuthStatus,
+    EventType,
+    PayloadStatus,
+    TelemetryEvent
+)
 
 
 def test_build_s3_object_key_returns_expected_prefix_structure() -> None:
@@ -65,3 +78,78 @@ def test_build_quarantine_record_wraps_error_metadata() -> None:
     assert quarantine_record["error_type"] == "validation_error"
     assert "battery_pct must be between 0 and 100" in quarantine_record["error_message"]
     assert quarantine_record["raw_record"] == raw_record
+
+
+def test_should_publish_alert_for_anomalous_event() -> None:
+    event = TelemetryEvent(
+        event_id="evt-100001",
+        event_timestamp="2026-04-11T12:00:00Z",
+        satellite_id="NYX-SAT-001",
+        ground_station_id="GND-UK-001",
+        event_type=EventType.POWER,
+        schema_version="1.0",
+        source_ip="192.168.1.10",
+        ingest_source="simulator",
+        battery_pct=22.0,
+        payload_status=PayloadStatus.DEGRADED,
+        status_code="PWR_WARN",
+        is_anomalous=True,
+        anomaly_type="battery_drain_spike",
+    )
+
+    should_alert, reason = evaluate_sns_alert(event)
+
+    assert should_alert is True
+    assert "anomalous" in reason.lower()
+
+
+def test_should_publish_alert_for_failed_auth() -> None:
+    event = TelemetryEvent(
+        event_id="evt-100002",
+        event_timestamp="2026-04-11T12:00:01Z",
+        satellite_id="NYX-SAT-002",
+        ground_station_id="GND-UK-001",
+        event_type=EventType.COMMS,
+        schema_version="1.0",
+        source_ip="203.0.113.250",
+        ingest_source="simulator",
+        signal_strength_db=-100.0,
+        uplink_latency_ms=250.0,
+        downlink_latency_ms=260.0,
+        packet_integrity_score=0.45,
+        auth_status=AuthStatus.FAILED,
+        payload_status=PayloadStatus.DEGRADED,
+        status_code="COMMS_WARN",
+        is_anomalous=True,
+        anomaly_type="spoofed_source",
+    )
+
+    should_alert, reason = evaluate_sns_alert(event)
+
+    assert should_alert is True
+    assert "authentication" in reason.lower()
+
+
+def test_build_alert_message_contains_key_fields() -> None:
+    event = TelemetryEvent(
+        event_id="evt-100003",
+        event_timestamp="2026-04-11T12:00:02Z",
+        satellite_id="NYX-SAT-003",
+        ground_station_id="GND-UK-001",
+        event_type=EventType.THERMAL,
+        schema_version="1.0",
+        source_ip="192.168.1.10",
+        ingest_source="simulator",
+        temperature_c=72.0,
+        payload_status=PayloadStatus.DEGRADED,
+        status_code="THERM_WARN",
+        is_anomalous=True,
+        anomaly_type="thermal_runaway",
+    )
+
+    subject, message = build_alert_message(event, "Temperature exceeded threshold")
+
+    assert "NYX Alert" in subject
+    assert event.satellite_id in subject
+    assert event.event_id in message
+    assert "Temperature exceeded threshold" in message

@@ -144,6 +144,14 @@ resource "aws_iam_role_policy" "nyx_lambda_s3_kinesis_logs_policy" {
           "kinesis:SubscribeToShard"
         ]
         Resource = aws_kinesis_stream.nyx_telemetry.arn
+      },
+      {
+        Sid    = "AllowSnsPublish"
+        Effect = "Allow"
+        Action = [
+          "sns:Publish"
+        ]
+        Resource = aws_sns_topic.nyx_operational_alerts.arn
       }
     ]
   })
@@ -174,6 +182,7 @@ resource "aws_lambda_function" "nyx_bronze_landing_consumer" {
       NYX_BRONZE_PREFIX     = "bronze/telemetry"
       NYX_SILVER_PREFIX     = "silver/telemetry"
       NYX_QUARANTINE_PREFIX = "quarantine/telemetry"
+      NYX_ALERT_TOPIC_ARN   = aws_sns_topic.nyx_operational_alerts.arn
     }
   }
 

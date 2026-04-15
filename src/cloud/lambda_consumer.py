@@ -10,7 +10,7 @@ from uuid import uuid4
 import boto3
 
 from pydantic import ValidationError
-from simulator.contracts import TelemetryEvent
+from simulator.contracts import TelemetryEvent, AuthStatus
 
 # Deployment note:
 # This module is intended to be packaged and deployed as the NYX bronze layer
@@ -20,6 +20,7 @@ LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
 s3_client = boto3.client("s3")
+sns_client = boto3.client("sns")
 
 # Where each landed batch goes in the NYX bronze S3 bucket (example key: bronze/telemetry/ingestion_date=2026-04-11/satellite_id=NYX-SAT-001/batch_<uuid>.jsonl)
 def build_s3_object_key(*, prefix: str, timestamp: datetime, batch_id: str) -> str:
@@ -77,6 +78,76 @@ def jsonl_batch_to_s3(
 
     return s3_object_key
         
+# Determines if an SNS alert should be published for a validated (silver) event
+def evaluate_sns_alert(event: TelemetryEvent) -> tuple[bool, str]:
+    
+    if event.auth_status == AuthStatus.FAILED:
+        return True, "Authentication failure detected: potential security breach"
+    
+    if event.is_anomalous:
+        return True, f"Anomalous telemetry detected: {event.anomaly_type}"
+    
+    if event.battery_pct is not None and event.battery_pct < 30.0:
+        return True, f"Low battery levels detected: {event.battery_pct:.2f}% remaining"
+    
+    if event.temperature_c is not None and event.temperature_c > 70.0:
+        return True, f"Temperature levels exceeding operational threshold: {event.temperature_c:.2f} C"
+    
+    if event.temperature_c is not None and event.temperature_c < -20.0:
+        return True, f"Temperature levels below operational threshold: {event.temperature_c:.2f} C"
+    
+    if event.uplink_latency_ms is not None and event.uplink_latency_ms > 500.0:
+        return True, f"High uplink latency detected: {event.uplink_latency_ms:.2f} ms"
+    
+    if event.downlink_latency_ms is not None and event.downlink_latency_ms > 500.0:
+        return True, f"High downlink latency detected: {event.downlink_latency_ms:.2f} ms"
+    
+    if event.signal_strength_db is not None and event.signal_strength_db < -100.0:
+        return True, f"Weak signal strength detected: {event.signal_strength_db:.2f} dB"
+
+    if event.packet_integrity_score is not None and event.packet_integrity_score < 0.95:
+        return True, f"Packet integrity degradation detected: score of {event.packet_integrity_score:.2f}"
+    
+    if event.auth_status == AuthStatus.FAILED or AuthStatus.UNKNOWN and event.anomaly_type is not None and event.packet_integrity_score is not None and event.packet_integrity_score < 0.95:
+        return True, "Multiple indicators of potential critical security breach: authentication failure, anomalous telemetry, and packet integrity degradation"
+    
+    return False, "No alerting conditions met"
+    
+
+# Build SNS alert message subhect and body for notification email
+def build_alert_message(event: TelemetryEvent, reasoning: str) -> tuple[str, str]:
+
+    subject = f"NYX Alert: {event.satellite_id} {event.event_type.value}"
+
+    message = (
+        f"NYX operational alert triggered\n\n"
+        f"Reason: {reasoning}\n"
+        f"Satellite ID: {event.satellite_id}\n"
+        f"Event ID: {event.event_id}\n"
+        f"Event Type: {event.event_type.value}\n"
+        f"Event Timestamp: {event.event_timestamp}\n"
+        f"Anomaly Type: {event.anomaly_type}\n"
+        f"Payload Status: {event.payload_status}\n"
+        f"Status Code: {event.status_code}\n"
+    )
+
+    return subject, message
+
+
+# Publish SNS alert
+def publish_sns_alert(*, topic_arn: str, event: TelemetryEvent, reasoning: str) -> None:
+    
+    subject, message = build_alert_message(event, reasoning)
+
+    sns_client.publish(
+        TopicArn=topic_arn,
+        Subject=subject,
+        Message=message
+    )
+
+    LOGGER.info("Published SNS alert for event_id=%s, satellite_id=%s with reason: %s", 
+                event.event_id, event.satellite_id, reasoning)
+
 
 # Lambda entry point (writing to S3)
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
@@ -85,11 +156,14 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     - bronze/raw
     - silver/validated
     - quarantine/invalid
+    - SNS alerts
     """
     bucket_name = os.environ["NYX_BRONZE_BUCKET"]
     bronze_prefix = os.environ.get("NYX_BRONZE_PREFIX", "bronze/telemetry")
     silver_prefix = os.environ.get("NYX_SILVER_PREFIX", "silver/telemetry")
     quarantine_prefix = os.environ.get("NYX_QUARANTINE_PREFIX", "quarantine/telemetry")
+
+    alert_topic_arn = os.environ["NYX_ALERT_TOPIC_ARN"]
 
     records = event.get("Records", [])
     LOGGER.info("Received %s Kinesis records", len(records))
@@ -122,9 +196,22 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     valid_records: list[dict[str, Any]] = []
     quarantine_records: list[dict[str, Any]] = []
 
+    alerts_published = 0
+
     for raw_record in decoded_records:
         try:
             validated_event = TelemetryEvent(**raw_record) # Validation against original pydantic model contract
+
+            alert_triggered, alert_reasoning = evaluate_sns_alert(validated_event)
+            if alert_triggered:
+                publish_sns_alert(
+                    topic_arn=alert_topic_arn,
+                    event=validated_event,
+                    reasoning=alert_reasoning
+                )
+
+                alerts_published += 1
+
             validated_payload = validated_event.model_dump(mode="json")
             validated_payload["validated_at"] = ingestion_timestamp
             valid_records.append(validated_payload)
@@ -165,17 +252,18 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
     LOGGER.info(
         (
-            "Batch processed: received=%s decoded=%s bronze=%s silver=%s "
-            "quarantine=%s bronze_key=%s silver_key=%s quarantine_key=%s"
+            "Batch processed: received=%s decoded=%s bronze=%s silver=%s " 
+            "quarantine=%s alerts_published=%s bronze_key=%s silver_key=%s quarantine_key=%s"
         ),
         len(records),
         len(decoded_records),
         len(decoded_records),
         len(valid_records),
         len(quarantine_records),
+        alerts_published,
         bronze_key,
         silver_key,
-        quarantine_key,
+        quarantine_key
     )
 
     return {
@@ -185,6 +273,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         "bronze_records": len(decoded_records),
         "silver_records": len(valid_records),
         "quarantine_records": len(quarantine_records),
+        "sns_alerts_published": alerts_published,
         "bronze_key": bronze_key,
         "silver_key": silver_key,
         "quarantine_key": quarantine_key,
