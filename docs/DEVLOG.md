@@ -809,3 +809,33 @@ The next step is to verify the alert flow with a known alert populated telemetry
 
 ---
 
+## Entry 034 - SNS Alert Flow Verification (Wednesday 15th April 2026)
+
+### What I did
+- Created a alert triggering telemetry sender for SNS verification
+- Sent a communications event with failed authentication, high latency, degraded payload status, and anomaly metadata into the Kinesis stream
+- Verified that the event passed contract validation and landed in bronze and silver
+- Verified that the Lambda consumer published an SNS alert
+- Confirmed alert delivery through email
+
+### Why I did it
+This was the definitive proof that NYX can react to critical telemetry conditions in near real time. It confirmed that alerting events can move from ingestion through validation and storage into an operational notification path.
+
+### What I learned
+A good alert test should use a data contract valid event that is operationally suspicious, rather than an invalid event that just gets quarantined. This preserves the distinction between bad data and valid but dangerous telemetry.
+
+### Notes
+The next steps can focus on reducing alert noise, adding severity logic, improving observability, or building cloud dashboards and analytics views.
+
+### Alert duplication issue
+Multiple SNS alerts were being emitted for a single event because each alert condition triggered independently.
+
+### Resolution
+Refactored alert evaluation to aggregate multiple conditions into a single alert with a list of reasons.
+
+### Learning
+One well-structured alert is more useful than multiple fragmented alerts for the same event.
+
+---
+
+

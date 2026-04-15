@@ -97,10 +97,10 @@ def test_should_publish_alert_for_anomalous_event() -> None:
         anomaly_type="battery_drain_spike",
     )
 
-    should_alert, reason = evaluate_sns_alert(event)
+    should_alert, reasons = evaluate_sns_alert(event)
 
     assert should_alert is True
-    assert "anomalous" in reason.lower()
+    assert any("anomalous" in reason.lower() for reason in reasons)
 
 
 def test_should_publish_alert_for_failed_auth() -> None:
@@ -124,10 +124,10 @@ def test_should_publish_alert_for_failed_auth() -> None:
         anomaly_type="spoofed_source",
     )
 
-    should_alert, reason = evaluate_sns_alert(event)
+    should_alert, reasons = evaluate_sns_alert(event)
 
     assert should_alert is True
-    assert "authentication" in reason.lower()
+    assert any("authentication" in reason.lower() for reason in reasons)
 
 
 def test_build_alert_message_contains_key_fields() -> None:
@@ -147,7 +147,7 @@ def test_build_alert_message_contains_key_fields() -> None:
         anomaly_type="thermal_runaway",
     )
 
-    subject, message = build_alert_message(event, "Temperature exceeded threshold")
+    subject, message = build_alert_message(event, ["Temperature exceeded threshold"])
 
     assert "NYX Alert" in subject
     assert event.satellite_id in subject

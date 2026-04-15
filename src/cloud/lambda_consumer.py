@@ -80,48 +80,52 @@ def jsonl_batch_to_s3(
         
 # Determines if an SNS alert should be published for a validated (silver) event
 def evaluate_sns_alert(event: TelemetryEvent) -> tuple[bool, str]:
+
+    reasons: list[str] = []
     
     if event.auth_status == AuthStatus.FAILED:
-        return True, "Authentication failure detected: potential security breach"
+        reasons.append("Authentication failure detected: potential security breach")
     
     if event.is_anomalous:
-        return True, f"Anomalous telemetry detected: {event.anomaly_type}"
+        reasons.append(f"Anomalous telemetry detected: {event.anomaly_type}")
     
     if event.battery_pct is not None and event.battery_pct < 30.0:
-        return True, f"Low battery levels detected: {event.battery_pct:.2f}% remaining"
+        reasons.append(f"Low battery levels detected: {event.battery_pct:.2f}% remaining")
     
     if event.temperature_c is not None and event.temperature_c > 70.0:
-        return True, f"Temperature levels exceeding operational threshold: {event.temperature_c:.2f} C"
+        reasons.append(f"Temperature levels exceeding operational threshold: {event.temperature_c:.2f} C")
     
     if event.temperature_c is not None and event.temperature_c < -20.0:
-        return True, f"Temperature levels below operational threshold: {event.temperature_c:.2f} C"
+        reasons.append(f"Temperature levels below operational threshold: {event.temperature_c:.2f} C")
     
     if event.uplink_latency_ms is not None and event.uplink_latency_ms > 500.0:
-        return True, f"High uplink latency detected: {event.uplink_latency_ms:.2f} ms"
+        reasons.append(f"High uplink latency detected: {event.uplink_latency_ms:.2f} ms")
     
     if event.downlink_latency_ms is not None and event.downlink_latency_ms > 500.0:
-        return True, f"High downlink latency detected: {event.downlink_latency_ms:.2f} ms"
+        reasons.append(f"High downlink latency detected: {event.downlink_latency_ms:.2f} ms")
     
     if event.signal_strength_db is not None and event.signal_strength_db < -100.0:
-        return True, f"Weak signal strength detected: {event.signal_strength_db:.2f} dB"
+        reasons.append(f"Weak signal strength detected: {event.signal_strength_db:.2f} dB")
 
     if event.packet_integrity_score is not None and event.packet_integrity_score < 0.95:
-        return True, f"Packet integrity degradation detected: score of {event.packet_integrity_score:.2f}"
+        reasons.append(f"Packet integrity degradation detected: score of {event.packet_integrity_score:.2f}")
     
     if event.auth_status == AuthStatus.FAILED or AuthStatus.UNKNOWN and event.anomaly_type is not None and event.packet_integrity_score is not None and event.packet_integrity_score < 0.95:
-        return True, "Multiple indicators of potential critical security breach: authentication failure, anomalous telemetry, and packet integrity degradation"
+        reasons.append("Multiple indicators of potential critical security breach: authentication failure, anomalous telemetry, and packet integrity degradation")
     
-    return False, "No alerting conditions met"
+    return (len(reasons) > 0, reasons)
     
 
 # Build SNS alert message subhect and body for notification email
-def build_alert_message(event: TelemetryEvent, reasoning: str) -> tuple[str, str]:
+def build_alert_message(event: TelemetryEvent, reasons: list[str]) -> tuple[str, str]:
 
-    subject = f"NYX Alert: {event.satellite_id} {event.event_type.value}"
+    subject = f"NYX Alert: {event.satellite_id} - {event.event_type.value}"
+
+    reasons_msg = "\n".join(f"- {reason}" for reason in reasons)
 
     message = (
         f"NYX operational alert triggered\n\n"
-        f"Reason: {reasoning}\n"
+        f"Reasons: \n{reasons_msg}\n\n"
         f"Satellite ID: {event.satellite_id}\n"
         f"Event ID: {event.event_id}\n"
         f"Event Type: {event.event_type.value}\n"
