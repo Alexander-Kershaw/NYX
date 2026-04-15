@@ -47,3 +47,23 @@ output "lambda_execution_role_arn" {
   description = "ARN of the NYX Lambda execution role"
   value       = aws_iam_role.nyx_lambda_execution_role.arn
 }
+
+output "athena_results_bucket_name" {
+  description = "NYX Athena query results bucket name"
+  value       = aws_s3_bucket.nyx_athena_results.bucket
+}
+
+output "athena_results_bucket_arn" {
+  description = "ARN of the NYX Athena query results bucket"
+  value       = aws_s3_bucket.nyx_athena_results.arn
+}
+
+output "glue_database_name" {
+  description = "Glue database name for NYX telemetry"
+  value       = aws_glue_catalog_database.nyx_telemetry.name
+}
+
+output "glue_silver_table_name" {
+  description = "Glue table name for NYX silver telemetry"
+  value       = aws_glue_catalog_table.nyx_silver_telemetry.name
+}

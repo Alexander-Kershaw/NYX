@@ -73,3 +73,18 @@ variable "lambda_memory_mb" {
   type        = number
   default     = 256
 }
+
+variable "athena_bucket_name" {
+  description = "Unique S3 bucket name for Athena SQL query results"
+  type        = string
+}
+
+variable "glue_database_name" {
+  description = "Glue database name for NYX telemetry metadata"
+  type        = string
+  default     = "nyx_telemetry"
+}
+
+
+
+

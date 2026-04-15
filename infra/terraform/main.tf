@@ -193,3 +193,228 @@ resource "aws_lambda_event_source_mapping" "nyx_kinesis_to_lambda" {
   enabled           = true
 }
 
+
+#===================================================================================================================
+
+# NYX Athena SQL Results Bucket
+
+#===================================================================================================================
+
+resource "aws_s3_bucket" "nyx_athena_results" {
+  bucket = var.athena_bucket_name
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name    = var.athena_bucket_name
+      Purpose = "athena-query-results"
+    }
+  )
+}
+
+resource "aws_s3_bucket_versioning" "nyx_athena_results_versioning" {
+  bucket = aws_s3_bucket.nyx_athena_results.id
+
+  versioning_configuration {
+    status = var.enable_s3_versioning ? "Enabled" : "Suspended"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "nyx_athena_results_encryption" {
+  bucket = aws_s3_bucket.nyx_athena_results.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "nyx_athena_results_public_access" {
+  bucket = aws_s3_bucket.nyx_athena_results.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+
+#===================================================================================================================
+
+# NYX Glue Catalog Database
+
+#===================================================================================================================
+
+resource "aws_glue_catalog_database" "nyx_telemetry" {
+  name = var.glue_database_name
+
+  description = "Glue catalog database for NYX telemetry stream datasets"
+}
+
+
+#===================================================================================================================
+
+# NYX Glue Catalog Table - Silver Telemetry
+
+#===================================================================================================================
+
+resource "aws_glue_catalog_table" "nyx_silver_telemetry" {
+  name          = "silver_telemetry"
+  database_name = aws_glue_catalog_database.nyx_telemetry.name
+  table_type    = "EXTERNAL_TABLE"
+
+  parameters = {
+    EXTERNAL = "TRUE"
+  }
+
+  storage_descriptor {
+    location      = "s3://${aws_s3_bucket.nyx_bronze.bucket}/silver/telemetry/"
+    input_format  = "org.apache.hadoop.mapred.TextInputFormat"
+    output_format = "org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat"
+
+    # newline delimited JSON pattern
+    ser_de_info {
+      name                  = "nyx_silver_telemetry_json"
+      serialization_library = "org.openx.data.jsonserde.JsonSerDe"
+    }
+
+    columns {
+      name = "event_id"
+      type = "string"
+    }
+
+    columns {
+      name = "event_timestamp"
+      type = "string"
+    }
+
+    columns {
+      name = "satellite_id"
+      type = "string"
+    }
+
+    columns {
+      name = "ground_station_id"
+      type = "string"
+    }
+
+    columns {
+      name = "event_type"
+      type = "string"
+    }
+
+    columns {
+      name = "schema_version"
+      type = "string"
+    }
+
+    columns {
+      name = "source_ip"
+      type = "string"
+    }
+
+    columns {
+      name = "ingest_source"
+      type = "string"
+    }
+
+    columns {
+      name = "latitude"
+      type = "double"
+    }
+
+    columns {
+      name = "longitude"
+      type = "double"
+    }
+
+    columns {
+      name = "altitude_km"
+      type = "double"
+    }
+
+    columns {
+      name = "velocity_kms"
+      type = "double"
+    }
+
+    columns {
+      name = "battery_pct"
+      type = "double"
+    }
+
+    columns {
+      name = "temperature_c"
+      type = "double"
+    }
+
+    columns {
+      name = "signal_strength_db"
+      type = "double"
+    }
+
+    columns {
+      name = "uplink_latency_ms"
+      type = "double"
+    }
+
+    columns {
+      name = "downlink_latency_ms"
+      type = "double"
+    }
+
+    columns {
+      name = "packet_integrity_score"
+      type = "double"
+    }
+
+    columns {
+      name = "auth_status"
+      type = "string"
+    }
+
+    columns {
+      name = "payload_status"
+      type = "string"
+    }
+
+    columns {
+      name = "status_code"
+      type = "string"
+    }
+
+    columns {
+      name = "orbit_class"
+      type = "string"
+    }
+
+    columns {
+      name = "mission_mode"
+      type = "string"
+    }
+
+    columns {
+      name = "is_anomalous"
+      type = "boolean"
+    }
+
+    columns {
+      name = "anomaly_type"
+      type = "string"
+    }
+
+    columns {
+      name = "validated_at"
+      type = "string"
+    }
+  }
+
+  partition_keys {
+    name = "ingestion_date"
+    type = "string"
+  }
+}
+
+
+

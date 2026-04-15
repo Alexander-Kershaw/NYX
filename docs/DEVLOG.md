@@ -678,7 +678,7 @@ Future silver transformations can repartition data by satellite_id or other fiel
 
 ---
 
-## Entry 027 - Cloud Validation, Silver Landing, and Quarantine Routing
+## Entry 027 - Cloud Validation, Silver Landing, and Quarantine Routing (Tuesday 14th April 2026)
 
 ### What I did
 - Upgraded the NYX Lambda consumer to validate decoded telemetry records using the shared TelemetryEvent contract
@@ -706,8 +706,8 @@ Updated the Lambda packaging script to bundle Linux-compatible Pydantic dependen
 Lambda deployment packages must include all dependencies in a format compatible with the Lambda execution environment. Local tests passing is not sufficient if the deployed artifact is missing required libraries it will not run on in the cloud environment.
 
 ---
----
-## Entry 028 - Quarantine Path Verification
+
+## Entry 028 - Quarantine Path Verification (Tuesday 14th April 2026)
 
 ### What I did
 - Created a dedicated invalid telemetry event sender
@@ -726,4 +726,46 @@ A robust data pipeline should explicitly handle invalid data, not just process v
 ### Notes
 This confirms that the NYX ingestion pipeline enforces data contracts in the cloud and maintains a clear separation between raw, validated, and invalid telemetry data
 
----.
+---
+
+## Entry 029 - Athena and Glue Query Layer Design (Tuesday 14th April 2026)
+
+### What I did
+- Designed the first cloud query layer for NYX using Athena and the Glue Data Catalog AWS services
+- Chose the validated silver telemetry prefix as the first queryable dataset 
+- Defined the initial Athena schema for silver telemetry JSON records
+- Chose ingestion_date as the first partition key
+- Identified a few of the first useful operational SQL queries for event mix, anomaly counts, battery health, latency, and thermal extremes
+
+### Why I did it
+NYX now has a functioning ingestion and validation pipeline, so naturally next logical step is to make trusted telemetry queryable in the cloud. Athena and Glue services provide a lightweight AWS analytics layer.
+
+### What I learned
+A cloud query layer works best when it is built on top of a trusted and validated dataset. Querying silver rather than bronze keeps the analytics path clean and reinforces the value of the validation and quarantine boundary.
+
+### Notes
+The next step is to provision the Athena results bucket (seperate bucket from the bronze / silver / quarantine) and Glue database, then register the first silver telemetry table.
+
+Later I could consider writing data to parquet since this is more computationally and cost efficient, but I will focus on setting the foundation first with the data already in S3 storage. I could also consider further data partitions for better query performance.
+
+---
+
+## Entry 031 - Glue Table Registration for Silver Telemetry (Wednesday 15th April 2026)
+
+### What I did
+- Added a Glue catalog table for the NYX silver telemetry dataset
+- Mapped the validated telemetry schema into an explicit Athena SQL queryable external table definition
+- Partitioned the table by ingestion_date to match the silver S3 prefix layout
+- Applied the metadata definition through Terraform and verified the table in AWS Glue
+- Prepared the query layer for Athena by planning partition repair and first SQL checks
+
+### Why I did it
+Landing validated telemetry in S3 is the foundation, the project needed a cloud analytics layer to become a proper data platform. Registering silver telemetry in Glue makes the validated data queryable with Athena.
+
+### What I learned
+Cloud queryability depends on metadata as just as much as the actual data. Even when valid files already exist in S3, Athena needs an explicit schema and partition awareness before SQL can become useful.
+
+### Notes
+The next step is to repair partitions in Athena and run the first operational queries against the silver telemetry layer.
+
+---
