@@ -416,5 +416,26 @@ resource "aws_glue_catalog_table" "nyx_silver_telemetry" {
   }
 }
 
+#===================================================================================================================
 
+# NYX SNS Alerting
 
+#===================================================================================================================
+
+resource "aws_sns_topic" "nyx_operational_alerts" {
+  name = var.sns_topic_name
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name    = var.sns_topic_name
+      Purpose = "operational-alerting"
+    }
+  )
+}
+
+resource "aws_sns_topic_subscription" "nyx_alert_email_subscription" {
+  topic_arn = aws_sns_topic.nyx_operational_alerts.arn
+  protocol  = "email"
+  endpoint  = var.alert_email_address
+}

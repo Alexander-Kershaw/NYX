@@ -85,6 +85,13 @@ variable "glue_database_name" {
   default     = "nyx_telemetry"
 }
 
+variable "sns_topic_name" {
+  description = "SNS topic name for NYX operational alerts"
+  type        = string
+  default     = "nyx-operational-alerts"
+}
 
-
-
+variable "alert_email_address" {
+  description = "Email address subscribed to NYX SNS alerts"
+  type        = string
+}

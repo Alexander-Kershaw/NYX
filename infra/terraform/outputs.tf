@@ -67,3 +67,13 @@ output "glue_silver_table_name" {
   description = "Glue table name for NYX silver telemetry"
   value       = aws_glue_catalog_table.nyx_silver_telemetry.name
 }
+
+output "sns_topic_name" {
+  description = "NYX SNS operational alerts topic name"
+  value       = aws_sns_topic.nyx_operational_alerts.name
+}
+
+output "sns_topic_arn" {
+  description = "ARN of the NYX SNS operational alerts topic"
+  value       = aws_sns_topic.nyx_operational_alerts.arn
+}

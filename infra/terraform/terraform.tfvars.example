@@ -1,9 +1,12 @@
-aws_region = "eu-west-2"
-project_name = "NYX"
-environment = "dev"
-s3_bucket_name = "NYX-telemetry-example-2026-dev" 
-kinesis_stream_name = "NYX-telemetry-stream"
-lambda_function_name = "NYX-bronze-landing-consumer"
-kinesis_shard_count = 1
+aws_region           = "eu-west-2"
+project_name         = "nyx"
+environment          = "dev"
+s3_bucket_name       = "nyx-telemetry-alexander-kershaw-2026-dev"
+athena_bucket_name   = "nyx-athena-results-alexander-kershaw-2026-dev"
+kinesis_stream_name  = "nyx-telemetry-stream"
+lambda_function_name = "nyx-bronze-landing-consumer"
+kinesis_shard_count  = 1
 enable_s3_versioning = true
-
+glue_database_name   = "nyx_telemetry"
+sns_topic_name       = "nyx-operational-alerts"
+alert_email_address  = "dummyemail@notreal.com"

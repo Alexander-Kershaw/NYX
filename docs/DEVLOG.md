@@ -769,3 +769,22 @@ Cloud queryability depends on metadata as just as much as the actual data. Even 
 The next step is to repair partitions in Athena and run the first operational queries against the silver telemetry layer.
 
 ---
+
+## Entry 032 - SNS Alerting Infrastructure (Wednesday 15th April 2026)
+
+### What I did
+- Added an SNS topic for NYX operational alerts
+- Added an email subscription for alert delivery
+- Updated Terraform outputs to expose the SNS topic name and ARN
+- Applied the new alerting infrastructure and confirmed the email subscription
+
+### Why I did it
+The platform needed a real time response mechanism, not just data storage and queryability. SNS provides a simple AWS alerting channel that can later be triggered by the ingestion Lambda when suspicious telemetry is detected as defined by a set of alerting rules.
+
+### What I learned
+Alerting infrastructure is only partially configured until the notification endpoint is confirmed. Even when Terraform succeeds, the human subscription confirmation step is still required before messages can actually be delivered.
+
+### Notes
+The next step is to update the Lambda consumer so records are published to the SNS topic during ingestion and alerts are sent to email.
+
+---
