@@ -578,3 +578,77 @@ resource "aws_cloudwatch_dashboard" "nyx_operational_dashboard" {
     ]
   })
 }
+
+
+#===================================================================================================================
+
+# S3 Storage Lifecycle (Bronze/Silver/Quarantine)
+
+#===================================================================================================================
+
+resource "aws_s3_bucket_lifecycle_configuration" "nyx_bronze_lifecycle" {
+  bucket = aws_s3_bucket.nyx_bronze.id
+
+  rule {
+    id     = "bronze-retention"
+    status = "Enabled"
+
+    filter {
+      prefix = "bronze/"
+    }
+
+    expiration {
+      days = var.bronze_retention_days
+    }
+  }
+
+  rule {
+    id     = "silver-retention"
+    status = "Enabled"
+
+    filter {
+      prefix = "silver/"
+    }
+
+    expiration {
+      days = var.silver_retention_days
+    }
+  }
+
+  rule {
+    id     = "quarantine-retention"
+    status = "Enabled"
+
+    filter {
+      prefix = "quarantine/"
+    }
+
+    expiration {
+      days = var.quarantine_retention_days
+    }
+  }
+}
+
+
+#===================================================================================================================
+
+# S3 Storage Lifecycle (Athena Query Results)
+
+#===================================================================================================================
+
+resource "aws_s3_bucket_lifecycle_configuration" "nyx_athena_results_encryption_lifecycle" {
+  bucket = aws_s3_bucket.nyx_athena_results.id
+
+  rule {
+    id     = "athena-results-retention"
+    status = "Enabled"
+
+    filter {
+      prefix = ""
+    }
+
+    expiration {
+      days = var.athena_retention_days
+    }
+  }
+}

@@ -102,3 +102,26 @@ variable "cloudwatch_dashboard_name" {
   default     = "nyx-operational-dashboard"
 }
 
+variable "bronze_retention_days" {
+  description = "Number of days to retain bronze layer telemetry data"
+  type        = number
+  default     = 30
+}
+
+variable "silver_retention_days" {
+  description = "Number of days to retain silver layer telemetry data"
+  type        = number
+  default     = 90
+}
+
+variable "quarantine_retention_days" {
+  description = "Number of days to retain quarantined data"
+  type        = number
+  default     = 30
+}
+
+variable "athena_retention_days" {
+  description = "Number of days to retain Athena query results"
+  type        = number
+  default     = 14
+}

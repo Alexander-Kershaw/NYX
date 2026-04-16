@@ -894,6 +894,42 @@ The next hardening steps will likely include reviewing the Terraform user access
 
 ---
 
+## Entry 038 - Encryption and Data Security Review (Thursday 16th April 2026)
+
+### What I did
+- Reviewed encryption across all NYX services
+- Confirmed S3 server side encryption (AES256) is active for all data layers and confirmed Kinesis encryption at rest using AWS managed KMS keys
+- Verified that all services communicate over HTTPS, ensuring encryption in transit
+
+### Why I did it
+The platform handles continuous amd operationally sensitive telemetry data, so ensuring encryption both in transit and at rest is essential to reduce the risk of data exposure. So, I verified the current security choices in place to scout for security improvements.
+
+### What I learned
+Encryption is service specific in AWS. Some services require explicit configuration (Kinesis), while others default to secure settings. Understanding where encryption must be enabled manually is important for building secure systems.
+
+### Notes
+Future improvements include migrating to customer managed KMS keys for finer grain access control and auditability.
+
+---
+
+## Entry 039 - S3 Lifecycle (Thursday 16th April 2026)
+
+### What I did
+- Added lifecycle rules to the NYX telemetry bucket for bronze, silver, and quarantine prefixes
+- Added a lifecycle rule to the Athena results bucket
+- Chose different retention periods for raw, validated, quarantined, and query result data (silver records retained 90 days, quarantine and bronze for 30 days, Athena results of 14 days)
+- Applied and verified the lifecycle policies in AWS
+
+### Why I did it
+A functioning platform should not retain every object forever without intention. Lifecycle rules improve cloud cost control, reduce storage clutter, and make the data retention model more deliberate and explainable rarther than becoming bloated with redundant legacy data and increasing cloud bills.
+
+### What I learned
+Different data layers have different operational value. Raw and less processed data can be retained for shorter periods, while validated datasets can justify longer retention because they are more useful and depended upon downstream.
+
+### Notes
+Future enhancements could introduce storage class transitions or archives, but I only implemented some basic data hygiene and cost aware platform design choices which I could refine later if project scope was to increase.
+
+---
 
 
 
