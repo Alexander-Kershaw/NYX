@@ -652,3 +652,83 @@ resource "aws_s3_bucket_lifecycle_configuration" "nyx_athena_results_encryption_
     }
   }
 }
+
+
+#===================================================================================================================
+
+# NYX CloudWatch Alarms
+
+#===================================================================================================================
+
+resource "aws_cloudwatch_metric_alarm" "nyx_quarantine_alarm" {
+  alarm_name          = "nyx-quarantine-records-alarm"
+  alarm_description   = "Triggers when quarantined telemetry records are detected"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "QuarantineEvents"
+  namespace           = "NYX/Ingestion"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = var.quarantine_alarm_threshold
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = [aws_sns_topic.nyx_operational_alerts.arn]
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name    = "nyx-quarantine-records-alarm"
+      Purpose = "data-quality-monitoring"
+    }
+  )
+}
+
+resource "aws_cloudwatch_metric_alarm" "nyx_alerts_published_alarm" {
+  alarm_name          = "nyx-alerts-published-alarm"
+  alarm_description   = "Triggers when alerting telemetry events are published"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "AlertsPublished"
+  namespace           = "NYX/Ingestion"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = var.alerts_published_alarm_threshold
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = [aws_sns_topic.nyx_operational_alerts.arn]
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name    = "nyx-alerts-published-alarm"
+      Purpose = "operational-alerting-monitoring"
+    }
+  )
+}
+
+resource "aws_cloudwatch_metric_alarm" "nyx_lambda_errors_alarm" {
+  alarm_name          = "nyx-lambda-errors-alarm"
+  alarm_description   = "Triggers when the NYX Lambda consumer records errors"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = var.lambda_error_alarm_threshold
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    FunctionName = aws_lambda_function.nyx_bronze_landing_consumer.function_name
+  }
+
+  alarm_actions = [aws_sns_topic.nyx_operational_alerts.arn]
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name    = "nyx-lambda-errors-alarm"
+      Purpose = "platform-health-monitoring"
+    }
+  )
+}

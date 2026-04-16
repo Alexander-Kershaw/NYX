@@ -83,3 +83,17 @@ output "cloudwatch_dashboard_name" {
   value       = aws_cloudwatch_dashboard.nyx_operational_dashboard.dashboard_name
 }
 
+output "quarantine_alarm_name" {
+  description = "CloudWatch alarm name for quarantined records"
+  value       = aws_cloudwatch_metric_alarm.nyx_quarantine_alarm.alarm_name
+}
+
+output "alerts_published_alarm_name" {
+  description = "CloudWatch alarm name for published alerts"
+  value       = aws_cloudwatch_metric_alarm.nyx_alerts_published_alarm.alarm_name
+}
+
+output "lambda_errors_alarm_name" {
+  description = "CloudWatch alarm name for Lambda errors"
+  value       = aws_cloudwatch_metric_alarm.nyx_lambda_errors_alarm.alarm_name
+}

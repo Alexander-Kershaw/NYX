@@ -125,3 +125,21 @@ variable "athena_retention_days" {
   type        = number
   default     = 14
 }
+
+variable "quarantine_alarm_threshold" {
+  description = "Threshold for quarantine record alarm"
+  type        = number
+  default     = 1
+}
+
+variable "alerts_published_alarm_threshold" {
+  description = "Threshold for alerts published alarm"
+  type        = number
+  default     = 1
+}
+
+variable "lambda_error_alarm_threshold" {
+  description = "Threshold for Lambda error alarm"
+  type        = number
+  default     = 1
+}

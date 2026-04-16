@@ -931,6 +931,22 @@ Future enhancements could introduce storage class transitions or archives, but I
 
 ---
 
+## Entry 040 - CloudWatch Alarms (Thursday 16th April 2026)
 
+### What I did
+- Added CloudWatch alarms for quarantined records, published alerts, and Lambda errors
+- Connected the alarms to the existing SNS operational alerts topic to send emails when alarms are triggered
+- Applied the alarms through Terraform and tested alarm state transitions using invalid and alert triggering telemetry events
+
+### Why I did it
+Metrics and dashboards are useful for observation, but alarms allow the system to react automatically when operational thresholds are crossed, this action makes NYX more active than passive with its own system monitoring.
+
+### What I learned
+There is an important distinction between event driven alerts and metric driven alarms. Lambda SNS alerts notify on individual suspicious events, while CloudWatch alarms notify when system level thresholds are breached over time.
+
+### Notes
+Future improvements could separate operational, security, and platform health notifications into different SNS topics to reduce noise and improve incident routing.
+
+---
 
 
