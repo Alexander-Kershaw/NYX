@@ -7,7 +7,8 @@ from cloud.lambda_consumer import (
     decode_kinesis_record,
     build_quarantine_record,
     evaluate_sns_alert,
-    build_alert_message
+    build_alert_message,
+    publish_cloudwatch_metrics
 )
 
 from simulator.contracts import (
@@ -16,6 +17,8 @@ from simulator.contracts import (
     PayloadStatus,
     TelemetryEvent
 )
+
+from unittest.mock import patch
 
 
 def test_build_s3_object_key_returns_expected_prefix_structure() -> None:
@@ -153,3 +156,21 @@ def test_build_alert_message_contains_key_fields() -> None:
     assert event.satellite_id in subject
     assert event.event_id in message
     assert "Temperature exceeded threshold" in message
+
+
+@patch("cloud.lambda_consumer.cloudwatch_client")
+def test_publish_cloudwatch_metrics_sends_expected_metric_count(mock_cloudwatch_client) -> None:
+    publish_cloudwatch_metrics(
+        namespace="NYX/Ingestion",
+        received_records=10,
+        decoded_records=10,
+        silver_records=9,
+        quarantine_records=1,
+        alerts_published=2,
+    )
+
+    mock_cloudwatch_client.put_metric_data.assert_called_once()
+    kwargs = mock_cloudwatch_client.put_metric_data.call_args.kwargs
+
+    assert kwargs["Namespace"] == "NYX/Ingestion"
+    assert len(kwargs["MetricData"]) == 5

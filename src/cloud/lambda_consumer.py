@@ -21,6 +21,7 @@ LOGGER.setLevel(logging.INFO)
 
 s3_client = boto3.client("s3")
 sns_client = boto3.client("sns")
+cloudwatch_client = boto3.client("cloudwatch")
 
 # Where each landed batch goes in the NYX bronze S3 bucket (example key: bronze/telemetry/ingestion_date=2026-04-11/satellite_id=NYX-SAT-001/batch_<uuid>.jsonl)
 def build_s3_object_key(*, prefix: str, timestamp: datetime, batch_id: str) -> str:
@@ -270,6 +271,15 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         quarantine_key
     )
 
+    publish_cloudwatch_metrics(
+        namespace="NYX/Ingestion",
+        received_records=len(records),
+        decoded_records=len(decoded_records),
+        silver_records=len(valid_records),
+        quarantine_records=len(quarantine_records),
+        alerts_published=alerts_published,
+    )
+
     return {
         "status": "success",
         "received_records": len(records),
@@ -282,3 +292,47 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         "silver_key": silver_key,
         "quarantine_key": quarantine_key,
     }
+
+
+# Publish custom CloudWatch metrics
+def publish_cloudwatch_metrics(
+        *,
+        namespace: str,
+        received_records: int,
+        decoded_records: int,
+        silver_records: int,
+        quarantine_records: int,
+        alerts_published: int
+) -> None:
+    
+    cloudwatch_client.put_metric_data(
+        Namespace=namespace,
+        MetricData=[
+            {
+                "MetricName": "ReceivedEvents",
+                "Value": received_records,
+                "Unit": "Count"
+            },
+            {
+                "MetricName": "DecodedEvents",
+                "Value": decoded_records,
+                "Unit": "Count"
+            },
+            {
+                "MetricName": "SilverEvents",
+                "Value": silver_records,
+                "Unit": "Count"
+            },
+            {
+                "MetricName": "QuarantineEvents",
+                "Value": quarantine_records,
+                "Unit": "Count"
+            },
+            {
+                "MetricName": "AlertsPublished",
+                "Value": alerts_published,
+                "Unit": "Count"
+            },
+        ],
+    )
+    

@@ -152,6 +152,14 @@ resource "aws_iam_role_policy" "nyx_lambda_s3_kinesis_logs_policy" {
           "sns:Publish"
         ]
         Resource = aws_sns_topic.nyx_operational_alerts.arn
+      },
+      {
+        Sid    = "AllowCloudWatchMetrics"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricData"
+        ]
+        Resource = "*"
       }
     ]
   })
