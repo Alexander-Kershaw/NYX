@@ -130,7 +130,11 @@ resource "aws_iam_role_policy" "nyx_lambda_s3_kinesis_logs_policy" {
         Action = [
           "s3:PutObject"
         ]
-        Resource = "${aws_s3_bucket.nyx_bronze.arn}/*"
+        Resource = [
+          "${aws_s3_bucket.nyx_bronze.arn}/bronze/*",
+          "${aws_s3_bucket.nyx_bronze.arn}/silver/*",
+          "${aws_s3_bucket.nyx_bronze.arn}/quarantine/*"
+        ]
       },
       {
         Sid    = "AllowKinesisRead"

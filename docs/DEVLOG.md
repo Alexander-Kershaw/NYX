@@ -876,5 +876,25 @@ The next step is a security hardening pass: tightening IAM scope, reviewing encr
 
 ---
 
+## Entry 037 - IAM Hardening Review (Thursday 16th April 2026)
+
+### What I did
+- Reviewed the NYX IAM access model after the core platform features were implemented
+- Identified the Lambda execution role as the first priority for permissions privalages tightening
+- Tightened the Lambda S3 write scope to the bronze, silver, and quarantine prefixes instead of the full telemetry bucket
+
+### Why I did it
+Early development access was intentionally broad so the platform could be built quickly using a nyx-admin group created with broad permissions with the nyx-terraform user added to it, but the workload roles should become more constrained once the architecture stabilizes. Tightening the Lambda role reduces blast radius and makes the system design more credible.
+
+### What I learned
+IAM hardening is easier when it is phased. It could better to tighten workload roles first, where access patterns are well understood, before trying to fully optimize human development permissions.
+
+### Notes
+The next hardening steps will likely include reviewing the Terraform user access model, documenting invididual service permissions, and improving the encryption and bucket policy.
+
+---
+
+
+
 
 
