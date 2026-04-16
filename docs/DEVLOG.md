@@ -838,4 +838,43 @@ One well-structured alert is more useful than multiple fragmented alerts for the
 
 ---
 
+## Entry 035 - CloudWatch Custom Metrics for Ingestion Observability (Thursday 16th April 2026)
+
+### What I did
+- Added CloudWatch custom metric publishing to the NYX Lambda consumer
+- Published batch metrics for records received, decoded, written to silver, routed to quarantine, and alerts published
+- Added IAM permission for the Lambda role to publish custom metrics
+- Redeployed the Lambda and generated telemetry activity to verify the new metrics in the CloudWatch custom namespace
+
+### Why I did it
+The ingestion pipeline needed system visibility, not just logs and data outputs. Custom CloudWatch metrics provide a clearer operational view of throughput, validation outcomes, and alerting behavior over time.
+
+### What I learned
+Logs are useful for debugging individual executions, but metrics are better for understanding ongoing system health and trends. A small set of metrics can make a serverless pipeline much easier to monitor over time.
+
+### Notes
+The next step is to create a CloudWatch dashboard so these metrics can be viewed together in a single operational panel.
+
+---
+
+## Entry 036 - CloudWatch Operational Dashboard (Thursday 16th April 2026)
+
+### What I did
+- Added a CloudWatch dashboard for the NYX ingestion pipeline using Terraform
+- Added panels for ingestion throughput, validation routing, alerts published, Lambda invocations/errors, and Lambda duration
+- Applied the dashboard and generated telemetry activity to populate it with real operational data
+- Applied CloudWatch dashboard IAM permissions 
+
+### Why I did it
+The platform already had metrics, but they were scattered across CloudWatch metric pages and logs. A dashboard brings those signals together into a single operational view, making the system easier to monitor and explain.
+
+### What I learned
+Metrics become much more useful when they are presented in context. A dashboard makes it easier to spot throughput changes, quarantine spikes, alert activity, and Lambda health without jumping between multiple AWS views.
+
+### Notes
+The next step is a security hardening pass: tightening IAM scope, reviewing encryption choices, and documenting cost and security decisions more explicitly.
+
+---
+
+
 

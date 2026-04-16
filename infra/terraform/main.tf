@@ -456,3 +456,121 @@ resource "aws_sns_topic_subscription" "nyx_alert_email_subscription" {
   protocol  = "email"
   endpoint  = var.alert_email_address
 }
+
+#===================================================================================================================
+
+# NYX Ingestion CloudWatch Dashboard
+
+#===================================================================================================================
+
+resource "aws_cloudwatch_dashboard" "nyx_operational_dashboard" {
+  dashboard_name = var.cloudwatch_dashboard_name
+
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
+
+        properties = {
+          title   = "NYX Ingestion - Events Received vs Decoded"
+          view    = "timeSeries"
+          stacked = false
+          region  = var.aws_region
+          stat    = "Sum"
+          period  = 60
+
+          metrics = [
+            ["NYX/Ingestion", "ReceivedEvents"],
+            [".", "DecodedEvents"]
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        x      = 12
+        y      = 0
+        width  = 12
+        height = 6
+
+        properties = {
+          title   = "NYX Validation - Silver vs Quarantine"
+          view    = "timeSeries"
+          stacked = false
+          region  = var.aws_region
+          stat    = "Sum"
+          period  = 60
+
+          metrics = [
+            ["NYX/Ingestion", "SilverEventsr"],
+            [".", "QuarantineEvents"]
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 6
+        width  = 12
+        height = 6
+
+        properties = {
+          title   = "NYX Alerts Published"
+          view    = "timeSeries"
+          stacked = false
+          region  = var.aws_region
+          stat    = "Sum"
+          period  = 60
+
+          metrics = [
+            ["NYX/Ingestion", "AlertsPublished"]
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        x      = 12
+        y      = 6
+        width  = 12
+        height = 6
+
+        properties = {
+          title   = "NYX Lambda Invocations and Errors"
+          view    = "timeSeries"
+          stacked = false
+          region  = var.aws_region
+          stat    = "Sum"
+          period  = 60
+
+          metrics = [
+            ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.nyx_bronze_landing_consumer.function_name],
+            [".", "Errors", ".", "."]
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 12
+        width  = 24
+        height = 6
+
+        properties = {
+          title   = "NYX Lambda Duration"
+          view    = "timeSeries"
+          stacked = false
+          region  = var.aws_region
+          stat    = "Average"
+          period  = 60
+
+          metrics = [
+            ["AWS/Lambda", "Duration", "FunctionName", aws_lambda_function.nyx_bronze_landing_consumer.function_name]
+          ]
+        }
+      }
+    ]
+  })
+}

@@ -77,3 +77,9 @@ output "sns_topic_arn" {
   description = "ARN of the NYX SNS operational alerts topic"
   value       = aws_sns_topic.nyx_operational_alerts.arn
 }
+
+output "cloudwatch_dashboard_name" {
+  description = "NYX CloudWatch dashboard name"
+  value       = aws_cloudwatch_dashboard.nyx_operational_dashboard.dashboard_name
+}
+

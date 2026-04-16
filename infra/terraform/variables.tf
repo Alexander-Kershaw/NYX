@@ -95,3 +95,10 @@ variable "alert_email_address" {
   description = "Email address subscribed to NYX SNS alerts"
   type        = string
 }
+
+variable "cloudwatch_dashboard_name" {
+  description = "Name of the NYX ingestion cloudwatch dashboard"
+  type        = string
+  default     = "nyx-operational-dashboard"
+}
+
